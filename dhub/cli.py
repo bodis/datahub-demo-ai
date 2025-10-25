@@ -3,7 +3,7 @@
 import typer
 from rich.console import Console
 
-from dhub.commands import db, generate
+from dhub.commands import db, generate, seed
 
 console = Console()
 app = typer.Typer(
@@ -16,6 +16,7 @@ app = typer.Typer(
 # Register command groups
 app.add_typer(db.app, name="db", help="📊 Database operations")
 app.add_typer(generate.app, name="generate", help="🎲 Generate fake data")
+app.add_typer(seed.app, name="seed", help="🌱 Seed demo databases with realistic data")
 
 
 @app.command()

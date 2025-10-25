@@ -255,6 +255,23 @@ DATAHUB_GMS_PORT=8080
 DATAHUB_TOKEN=your_token_here
 ```
 
+## Demo Data Generation
+
+Generate realistic data across all 6 databases:
+
+```bash
+# Quick demo (120 customers, 15 employees)
+dhub seed all --scale 0.1
+
+# Base requirements (1200 customers, 150 employees)
+dhub seed all --scale 1.0
+
+# Check generated data
+dhub seed status
+```
+
+See [docs/data_generation.md](docs/data_generation.md) for details.
+
 ## Use Cases & Demonstrations
 
 ### Use Case 1: Multi-Database Data Discovery

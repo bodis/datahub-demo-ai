@@ -216,12 +216,78 @@ db_url = config.get_postgres_connection_string()
 datahub_url = config.get_datahub_url()
 ```
 
+## Data Generation System
+
+### Seed Command
+```bash
+dhub seed all --scale 0.1          # Quick demo (120 customers, 15 employees)
+dhub seed all --scale 1.0          # Base requirements (1200, 150)
+dhub seed status                   # Show record counts
+dhub seed clear --confirm          # Truncate all data
+```
+
+### Architecture
+```
+dhub/data_generators/
+├── id_manager.py         # Cross-database ID tracking
+├── employees.py          # Phase 1: Employees & departments
+├── customers.py          # Phase 1-2: Customers & accounts
+└── orchestrator.py       # Main coordinator with scale_factor
+```
+
+### Scale Factor Design
+- **Fixed datasets** (don't scale): Departments (12), Training Programs (16-20), Branch Codes (15-20)
+- **Scalable datasets** (multiply by scale): Employees (base 150), Customers (base 1200), Accounts (proportional)
+- `scale_factor` parameter multiplies base counts while maintaining relationships
+
+### Implementation Status
+**Phase 1-2 (✅ 40%)**: employees_db (departments, employees, training), customer_db (profiles), accounts_db (customers, accounts)
+
+**Phase 3-6 (❌ 60%)**: Transactions, Loans, Insurance, Interactions, Campaigns, Compliance (KYC, AML, Audit)
+
+### Extending with New Phases
+```python
+# 1. Create generator in dhub/data_generators/loans.py
+class LoanGenerator:
+    def __init__(self, id_manager, scale_factor=1.0):
+        self.base_applications = 400
+        self.num_applications = int(self.base_applications * scale_factor)
+
+    def generate_applications(self, customers):
+        # 35% of customers apply
+        applicants = random.sample(customers, k=int(len(customers) * 0.35))
+        # Generate applications, store IDs in id_manager
+
+# 2. Add to orchestrator.py
+from dhub.data_generators.loans import LoanGenerator
+
+def _generate_loans(self):
+    loan_gen = LoanGenerator(self.id_manager, self.scale_factor)
+    applications = loan_gen.generate_applications(self.customers)
+    # Bulk insert with executemany()
+```
+
+### Key Relationships Maintained
+- `customer_id`: accounts_db.customers ↔ customer_db.customer_profiles ↔ compliance_db.kyc_records
+- `employee_id`: Referenced as assigned_agent_id, loan_officer_id, processed_by, etc.
+- `account_id`: Links to transactions, loans (linked_account_id), insurance
+- All FKs tracked in `IDManager` for referential integrity
+
+### Data Generator Pattern
+1. Calculate scaled count: `int(BASE_COUNT * scale_factor)`
+2. Generate records with Faker + realistic distributions
+3. Store IDs in `id_manager` for cross-references
+4. Bulk insert with `executemany()` (batches of 500-1000)
+5. Maintain fixed percentages (e.g., 75% customers have accounts, 25% multiple)
+
+See `docs/data_generation.md` for full details.
+
 ## Future Extensions Ideas
+- Complete Phases 3-6 (transactions, loans, insurance, compliance)
 - DataHub API commands (create datasets, add lineage)
 - Data validation rules
 - Schema comparison tools
 - Ingestion automation
-- Custom data quality checks
 
 ---
 **Last Updated**: 2025-10-25
