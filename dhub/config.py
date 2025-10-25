@@ -18,7 +18,17 @@ class Config:
     POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
     POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
     POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "postgres")
-    POSTGRES_DB = os.getenv("POSTGRES_DB", "mydb")
+    POSTGRES_DB = os.getenv("POSTGRES_DB", "postgres")
+
+    # Demo Databases (created by init scripts)
+    DEMO_DATABASES = [
+        "employees_db",
+        "customer_db",
+        "accounts_db",
+        "insurance_db",
+        "loans_db",
+        "compliance_db",
+    ]
 
     # DataHub Configuration
     DATAHUB_GMS_HOST = os.getenv("DATAHUB_GMS_HOST", "localhost")
@@ -39,9 +49,19 @@ class Config:
         return f"{cls.DATAHUB_GMS_PROTOCOL}://{cls.DATAHUB_GMS_HOST}:{cls.DATAHUB_GMS_PORT}"
 
     @classmethod
-    def get_postgres_connection_string(cls) -> str:
-        """Get PostgreSQL connection string."""
-        return f"postgresql://{cls.POSTGRES_USER}:{cls.POSTGRES_PASSWORD}@{cls.POSTGRES_HOST}:{cls.POSTGRES_PORT}/{cls.POSTGRES_DB}"
+    def get_postgres_connection_string(cls, database: str | None = None) -> str:
+        """Get PostgreSQL connection string.
+
+        Args:
+            database: Database name. If None, uses POSTGRES_DB from config.
+        """
+        db = database or cls.POSTGRES_DB
+        return f"postgresql://{cls.POSTGRES_USER}:{cls.POSTGRES_PASSWORD}@{cls.POSTGRES_HOST}:{cls.POSTGRES_PORT}/{db}"
+
+    @classmethod
+    def get_all_databases(cls) -> list[str]:
+        """Get list of all databases including demo databases."""
+        return cls.DEMO_DATABASES
 
 
 # Global config instance

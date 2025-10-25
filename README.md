@@ -131,25 +131,48 @@ open http://localhost:9002
 
 ### Database Commands
 
-Test database connection:
+List all available databases:
 ```bash
-dhub db test
+dhub db list
 ```
 
-List all tables:
+Test database connections (all demo databases by default):
 ```bash
+# Test all demo databases
+dhub db test
+
+# Test specific database
+dhub db test --database employees_db
+```
+
+List all tables (from all demo databases by default):
+```bash
+# Show tables from all 6 demo databases
 dhub db tables
+
+# Show tables from specific database
+dhub db tables --database customer_db
+
+# Show tables from all databases (including system databases)
+dhub db tables --all
 ```
 
 Execute a SQL query:
 ```bash
+# Query default database
 dhub db query "SELECT * FROM employees LIMIT 10"
-dhub db query "SELECT table_schema, table_name FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog', 'information_schema')"
+
+# Query specific database
+dhub db query "SELECT * FROM customer_profiles LIMIT 10" --database customer_db
 ```
 
 Get database information:
 ```bash
+# Get info for default database
 dhub db info
+
+# Get info for specific database
+dhub db info --database insurance_db
 ```
 
 ### Data Generation Commands
@@ -213,8 +236,16 @@ POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
-POSTGRES_DB=mydb
+POSTGRES_DB=postgres
 ```
+
+**Note**: The CLI automatically connects to all 6 demo databases:
+- `employees_db` - Employee management
+- `customer_db` - Customer relationship management
+- `accounts_db` - Banking accounts
+- `insurance_db` - Insurance policies
+- `loans_db` - Loan management
+- `compliance_db` - Regulatory compliance
 
 ### DataHub Configuration
 
