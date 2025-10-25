@@ -1,0 +1,24 @@
+pipeline_name: "pg_local_marketing"   
+source:
+  type: postgres
+  config:
+    host_port: "192.168.200.15:20571"  
+    database: "easylot"
+    username: "easylot_user"
+    password: '"sadkqw423damxyASDqwdqw"'    
+    include_tables: true
+    include_views: true
+    include_view_lineage: true
+    include_view_column_lineage: true
+    schema_pattern:
+      allow: ["product", "marketing"]
+    profiling:
+      enabled: true
+      profile_table_level_only: false
+    stateful_ingestion:
+      enabled: true
+sink:
+  type: datahub-rest
+  config:
+    server: "http://localhost:8080"
+#    token: eyJhbGciOiJIUzI1NiJ9.eyJhY3RvclR5cGUiOiJVU0VSIiwiYWN0b3JJZCI6ImRhdGFodWIiLCJ0eXBlIjoiUEVSU09OQUwiLCJ2ZXJzaW9uIjoiMiIsImp0aSI6ImE5ZjQ1YjFiLTlkYTUtNDNjMy1hZDA3LTMyZDM4NmQwNDVlMyIsInN1YiI6ImRhdGFodWIiLCJpc3MiOiJkYXRhaHViLW1ldGFkYXRhLXNlcnZpY2UifQ.f3Zi0BdoKi-MT1tDfscGMUNL7tkuYz7714d54PnLWN4

@@ -1,0 +1,16 @@
+domain_id,parent_domain_id,name,description
+banking_operations,,Banking Operations,Core banking operations and services encompassing customer management and financial products
+customer_management,banking_operations,Customer Management,Management of customer relationships and data across the organization
+customer_data,customer_management,Customer Data,Core customer identification and profile information
+customer_experience,customer_management,Customer Experience,Customer interactions and satisfaction metrics
+financial_products,banking_operations,Financial Products,Banking products and services offered to customers
+deposit_services,financial_products,Deposit Services,Account and deposit-related products and services
+lending_services,financial_products,Lending Services,Loan and credit products
+insurance_services,financial_products,Insurance Services,Insurance products sold through banking channels
+risk_compliance,banking_operations,Risk & Compliance,Risk management and regulatory compliance functions
+credit_risk,risk_compliance,Credit Risk,Assessment and management of lending risk
+operational_risk,risk_compliance,Operational Risk,Management of operational and fraud risks
+regulatory_compliance,risk_compliance,Regulatory Compliance,Adherence to banking regulations and reporting
+internal_operations,banking_operations,Internal Operations,Internal bank operations and workforce management
+human_resources,internal_operations,Human Resources,Employee data and workforce management
+audit_control,internal_operations,Audit & Control,Internal audit and control functions

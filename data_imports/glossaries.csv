@@ -1,0 +1,50 @@
+glossary_id,glossary_parent_id,name,definition,domain_id
+customer_domain_terms,,Customer Domain Terms,Terms related to customer identification and lifecycle,customer_management
+customer_identification,customer_domain_terms,Customer Identification,Terms for identifying and classifying customers,customer_data
+customer_id,customer_identification,Customer ID,Unique identifier for a customer across all banking systems,customer_data
+kyc_status,customer_identification,KYC Status,Know Your Customer verification status indicating compliance with identity verification requirements,customer_data
+customer_segment,customer_identification,Customer Segment,Classification of customers based on behavior and value (e.g. retail, premium, corporate),customer_data
+customer_lifecycle,customer_domain_terms,Customer Lifecycle,Terms describing customer journey and status,customer_experience
+onboarding_date,customer_lifecycle,Onboarding Date,Date when customer relationship was established,customer_experience
+customer_status,customer_lifecycle,Customer Status,Current status of customer relationship (active, dormant, closed),customer_experience
+churn_risk_score,customer_lifecycle,Churn Risk Score,Probability score indicating likelihood of customer attrition,customer_experience
+account_transaction_terms,,Account & Transaction Terms,Terms related to accounts and financial transactions,deposit_services
+account_attributes,account_transaction_terms,Account Attributes,Core attributes of banking accounts,deposit_services
+account_number,account_attributes,Account Number,Unique identifier for a bank account,deposit_services
+account_type,account_attributes,Account Type,Classification of account (savings, checking, money market),deposit_services
+account_status,account_attributes,Account Status,Current operational status of account (active, frozen, closed),deposit_services
+balance,account_attributes,Balance,Current monetary balance in an account,deposit_services
+transaction_attributes,account_transaction_terms,Transaction Attributes,Attributes describing financial transactions,deposit_services
+transaction_id,transaction_attributes,Transaction ID,Unique identifier for a financial transaction,deposit_services
+transaction_type,transaction_attributes,Transaction Type,Category of transaction (deposit, withdrawal, transfer, payment),deposit_services
+transaction_amount,transaction_attributes,Transaction Amount,Monetary value of a transaction,deposit_services
+product_terms,,Product Terms,Terms related to financial products offered,financial_products
+lending_terms,product_terms,Lending,Terms specific to loan products,lending_services
+loan_id,lending_terms,Loan ID,Unique identifier for a loan account,lending_services
+principal_amount,lending_terms,Principal Amount,Original loan amount borrowed,lending_services
+interest_rate,lending_terms,Interest Rate,Annual percentage rate charged on the loan,lending_services
+loan_status,lending_terms,Loan Status,Current state of loan (active, paid off, defaulted),lending_services
+default_status,lending_terms,Default Status,Indicator of whether loan is in default or delinquent,lending_services
+insurance_terms,product_terms,Insurance,Terms specific to insurance products,insurance_services
+policy_number,insurance_terms,Policy Number,Unique identifier for an insurance policy,insurance_services
+policy_type,insurance_terms,Policy Type,Category of insurance (life, property, vehicle, health),insurance_services
+premium_amount,insurance_terms,Premium Amount,Periodic payment amount for insurance coverage,insurance_services
+coverage_amount,insurance_terms,Coverage Amount,Maximum benefit payable under the policy,insurance_services
+risk_compliance_terms,,Risk & Compliance Terms,Terms related to risk assessment and regulatory compliance,risk_compliance
+risk_metrics,risk_compliance_terms,Risk Metrics,Quantitative measures of risk exposure,credit_risk
+risk_score,risk_metrics,Risk Score,Composite score indicating overall risk level of customer or transaction,credit_risk
+pd,risk_metrics,PD (Probability of Default),Statistical probability that a borrower will default on obligations,credit_risk
+ltv,risk_metrics,LTV (Loan to Value),Ratio of loan amount to appraised value of collateral,credit_risk
+compliance_indicators,risk_compliance_terms,Compliance Indicators,Flags and statuses for regulatory compliance,regulatory_compliance
+aml_flag,compliance_indicators,AML Flag,Anti-Money Laundering alert indicator,regulatory_compliance
+sar_status,compliance_indicators,SAR Status,Suspicious Activity Report filing status,regulatory_compliance
+regulatory_tier,compliance_indicators,Regulatory Tier,Risk tier assigned for regulatory reporting purposes,regulatory_compliance
+employee_operational_terms,,Employee & Operational Terms,Terms related to employees and operational metrics,internal_operations
+employee_attributes,employee_operational_terms,Employee Attributes,Core attributes of bank employees,human_resources
+employee_id,employee_attributes,Employee ID,Unique identifier for a bank employee,human_resources
+role,employee_attributes,Role,Job function or position of employee,human_resources
+department,employee_attributes,Department,Organizational unit where employee works,human_resources
+performance_metrics,employee_operational_terms,Performance Metrics,Metrics measuring operational and service performance,customer_experience
+nps_score,performance_metrics,NPS Score,Net Promoter Score measuring customer satisfaction and loyalty,customer_experience
+resolution_time,performance_metrics,Resolution Time,Average time taken to resolve customer issues,customer_experience
+approval_rate,performance_metrics,Approval Rate,Percentage of applications approved,lending_services
