@@ -175,36 +175,6 @@ dhub db info
 dhub db info --database insurance_db
 ```
 
-### Data Generation Commands
-
-Generate fake users:
-```bash
-dhub generate users 20
-```
-
-Generate and insert users into database:
-```bash
-dhub generate users 100 --create-table --insert
-```
-
-Generate fake companies:
-```bash
-dhub generate companies 15 --details
-```
-
-Generate fake addresses with locale:
-```bash
-dhub generate addresses 10 --locale en_GB
-```
-
-Generate custom fake data using any Faker method:
-```bash
-dhub generate custom email --count 20
-dhub generate custom sentence --count 10
-dhub generate custom color_name --count 15
-dhub generate custom credit_card_number --count 5
-```
-
 ### Other Commands
 
 Show version:
@@ -216,7 +186,7 @@ Get help:
 ```bash
 dhub --help
 dhub db --help
-dhub generate --help
+dhub seed --help
 ```
 
 ## Environment Configuration

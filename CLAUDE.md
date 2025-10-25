@@ -41,7 +41,7 @@ DHub CLI (dhub/) ← Python package with Typer + Rich
 - `dhub/config.py` - Config class (loads .env)
 - `dhub/db.py` - Database utilities (psycopg3)
 - `dhub/commands/db.py` - Database commands
-- `dhub/commands/generate.py` - Faker data generation
+- `dhub/commands/seed.py` - Demo data seeding
 
 ## CLI Commands Structure
 
@@ -49,15 +49,15 @@ DHub CLI (dhub/) ← Python package with Typer + Rich
 dhub
 ├── version                           # Show version
 ├── db                                # Database operations
-│   ├── test                         # Test connection
-│   ├── tables                       # List all tables
-│   ├── query "SQL"                  # Execute SQL
-│   └── info                         # DB info
-└── generate                          # Fake data generation
-    ├── users <count> [--insert]     # Generate users
-    ├── companies <count>            # Generate companies
-    ├── addresses <count>            # Generate addresses
-    └── custom <method> --count N    # Any Faker method
+│   ├── list                         # List all databases
+│   ├── test [--database DB]         # Test connection(s)
+│   ├── tables [--database DB]       # List tables
+│   ├── query "SQL" [--database DB]  # Execute SQL
+│   └── info [--database DB]         # Database info
+└── seed                              # Demo data generation
+    ├── all [--scale N]              # Generate demo data
+    ├── status                       # Show record counts
+    └── clear --confirm              # Truncate all data
 ```
 
 ## Common Workflows
