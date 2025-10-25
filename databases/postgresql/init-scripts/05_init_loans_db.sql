@@ -2,6 +2,7 @@
 -- Loan Management Database (loans_db)
 -- ============================================
 CREATE DATABASE loans_db;
+\c loans_db
 
 CREATE TABLE loan_applications (
     application_id VARCHAR(50) PRIMARY KEY,

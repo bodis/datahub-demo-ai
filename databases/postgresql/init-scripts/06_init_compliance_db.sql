@@ -2,6 +2,7 @@
 -- Compliance & Audit Database (compliance_db)
 -- ============================================
 CREATE DATABASE compliance_db;
+\c compliance_db
 
 CREATE TABLE kyc_records (
     kyc_id VARCHAR(50) PRIMARY KEY,

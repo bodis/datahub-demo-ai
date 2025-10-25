@@ -2,6 +2,7 @@
 -- CRM Database (customer_db)
 -- ============================================
 CREATE DATABASE customer_db;
+\c customer_db
 
 CREATE TABLE customer_profiles (
     customer_id VARCHAR(50) PRIMARY KEY,

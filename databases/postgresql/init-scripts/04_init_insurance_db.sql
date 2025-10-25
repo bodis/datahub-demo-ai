@@ -2,6 +2,7 @@
 -- Insurance Database (insurance_db)
 -- ============================================
 CREATE DATABASE insurance_db;
+\c insurance_db
 
 CREATE TABLE policies (
     policy_id VARCHAR(50) PRIMARY KEY,

@@ -2,6 +2,7 @@
 -- Core Banking Database (accounts_db)
 -- ============================================
 CREATE DATABASE accounts_db;
+\c accounts_db
 
 CREATE TABLE customers (
     customer_id VARCHAR(50) PRIMARY KEY,
