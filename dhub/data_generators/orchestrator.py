@@ -9,6 +9,7 @@ import psycopg
 from dhub.config import config
 from dhub.data_generators.customers import AccountGenerator, CRMGenerator, CustomerGenerator
 from dhub.data_generators.employees import EmployeeGenerator
+from dhub.data_generators.loans import LoanGenerator
 from dhub.data_generators.id_manager import IDManager
 from dhub.db import get_db_connection
 
@@ -133,6 +134,28 @@ class DataOrchestrator:
 
             task = progress.add_task("Generating CRM data...", total=None)
             crm_data = self._generate_crm(customers_data["master"])
+            progress.remove_task(task)
+
+            # Phase 4: Additional Employee Data
+            console.print("\n[bold]Phase 4: Employee Development & Reviews[/bold]")
+
+            task = progress.add_task("Generating employee training records...", total=None)
+            training_data = self._generate_employee_training()
+            progress.remove_task(task)
+
+            task = progress.add_task("Generating performance reviews...", total=None)
+            reviews_data = self._generate_performance_reviews()
+            progress.remove_task(task)
+
+            task = progress.add_task("Generating employee assignments...", total=None)
+            assignments_data = self._generate_employee_assignments(customers_data["master"])
+            progress.remove_task(task)
+
+            # Phase 5: Loan Products
+            console.print("\n[bold]Phase 5: Loan Products & Management[/bold]")
+
+            task = progress.add_task("Generating loan applications...", total=None)
+            loans_data = self._generate_loans(customers_data["master"], accounts_data["accounts"])
             progress.remove_task(task)
 
         # Show summary
@@ -427,6 +450,243 @@ class DataOrchestrator:
             "responses": responses,
         }
 
+    def _generate_employee_training(self) -> dict:
+        """Generate employee training enrollment records."""
+        def _do_generate():
+            emp_gen = EmployeeGenerator(self.id_manager, self.num_employees)
+
+            # Generate training records
+            training_records = emp_gen.generate_employee_training()
+            console.print(f"  [green]✓[/green] Generated {len(training_records)} training enrollments")
+
+            # Insert training records
+            if training_records:
+                with get_db_connection("employees_db") as conn:
+                    with conn.cursor() as cur:
+                        cur.executemany("""
+                            INSERT INTO employee_training (
+                                employee_id, program_id, enrollment_date, completion_date, status, score
+                            )
+                            VALUES (
+                                %(employee_id)s, %(program_id)s, %(enrollment_date)s,
+                                %(completion_date)s, %(status)s, %(score)s
+                            )
+                        """, training_records)
+                        conn.commit()
+
+            return {"training_records": training_records}
+
+        return self._execute_with_retry(_do_generate)
+
+    def _generate_performance_reviews(self) -> dict:
+        """Generate performance review records."""
+        def _do_generate():
+            emp_gen = EmployeeGenerator(self.id_manager, self.num_employees)
+
+            # Generate performance reviews
+            reviews = emp_gen.generate_performance_reviews()
+            console.print(f"  [green]✓[/green] Generated {len(reviews)} performance reviews")
+
+            # Insert reviews
+            if reviews:
+                with get_db_connection("employees_db") as conn:
+                    with conn.cursor() as cur:
+                        cur.executemany("""
+                            INSERT INTO performance_reviews (
+                                employee_id, review_date, reviewer_id, rating, goals_met, comments
+                            )
+                            VALUES (
+                                %(employee_id)s, %(review_date)s, %(reviewer_id)s,
+                                %(rating)s, %(goals_met)s, %(comments)s
+                            )
+                        """, reviews)
+                        conn.commit()
+
+            return {"reviews": reviews}
+
+        return self._execute_with_retry(_do_generate)
+
+    def _generate_employee_assignments(self, customers: list[dict]) -> dict:
+        """Generate employee assignment records."""
+        def _do_generate():
+            emp_gen = EmployeeGenerator(self.id_manager, self.num_employees)
+
+            # Get customer IDs
+            customer_ids = [c["customer_id"] for c in customers]
+
+            # Generate assignments
+            assignments = emp_gen.generate_employee_assignments(customer_ids)
+            console.print(f"  [green]✓[/green] Generated {len(assignments)} employee assignments")
+
+            # Insert assignments
+            if assignments:
+                with get_db_connection("employees_db") as conn:
+                    with conn.cursor() as cur:
+                        cur.executemany("""
+                            INSERT INTO employee_assignments (
+                                employee_id, assignment_type, related_entity_id, start_date, end_date
+                            )
+                            VALUES (
+                                %(employee_id)s, %(assignment_type)s, %(related_entity_id)s,
+                                %(start_date)s, %(end_date)s
+                            )
+                        """, assignments)
+                        conn.commit()
+
+            return {"assignments": assignments}
+
+        return self._execute_with_retry(_do_generate)
+
+    def _generate_loans(self, customers: list[dict], accounts: list[dict]) -> dict:
+        """Generate loan data for loans_db."""
+        def _do_generate():
+            loan_gen = LoanGenerator(self.id_manager, self.scale_factor)
+
+            # Generate loan applications
+            applications = loan_gen.generate_loan_applications(customers)
+            console.print(f"  [green]✓[/green] Generated {len(applications)} loan applications")
+
+            # Insert applications
+            if applications:
+                with get_db_connection("loans_db") as conn:
+                    with conn.cursor() as cur:
+                        cur.executemany("""
+                            INSERT INTO loan_applications (
+                                application_id, customer_id, loan_type, requested_amount,
+                                application_date, status, officer_id, decision_date,
+                                approved_amount, rejection_reason
+                            )
+                            VALUES (
+                                %(application_id)s, %(customer_id)s, %(loan_type)s,
+                                %(requested_amount)s, %(application_date)s, %(status)s,
+                                %(officer_id)s, %(decision_date)s, %(approved_amount)s,
+                                %(rejection_reason)s
+                            )
+                        """, applications)
+                        conn.commit()
+
+            # Generate loans from approved applications
+            loans = loan_gen.generate_loans(accounts)
+            console.print(f"  [green]✓[/green] Generated {len(loans)} loans")
+
+            # Insert loans
+            if loans:
+                with get_db_connection("loans_db") as conn:
+                    with conn.cursor() as cur:
+                        cur.executemany("""
+                            INSERT INTO loans (
+                                loan_id, application_id, loan_number, customer_id, linked_account_id,
+                                loan_type, principal_amount, interest_rate, term_months,
+                                disbursement_date, maturity_date, loan_status, outstanding_balance,
+                                default_status, approved_by
+                            )
+                            VALUES (
+                                %(loan_id)s, %(application_id)s, %(loan_number)s, %(customer_id)s,
+                                %(linked_account_id)s, %(loan_type)s, %(principal_amount)s,
+                                %(interest_rate)s, %(term_months)s, %(disbursement_date)s,
+                                %(maturity_date)s, %(loan_status)s, %(outstanding_balance)s,
+                                %(default_status)s, %(approved_by)s
+                            )
+                        """, loans)
+                        conn.commit()
+
+            # Generate collateral
+            collateral = loan_gen.generate_collateral(loans)
+            console.print(f"  [green]✓[/green] Generated {len(collateral)} collateral records")
+
+            # Insert collateral
+            if collateral:
+                with get_db_connection("loans_db") as conn:
+                    with conn.cursor() as cur:
+                        cur.executemany("""
+                            INSERT INTO collateral (
+                                collateral_id, loan_id, collateral_type, description,
+                                appraised_value, appraisal_date, ltv_ratio
+                            )
+                            VALUES (
+                                %(collateral_id)s, %(loan_id)s, %(collateral_type)s,
+                                %(description)s, %(appraised_value)s, %(appraisal_date)s,
+                                %(ltv_ratio)s
+                            )
+                        """, collateral)
+                        conn.commit()
+
+            # Generate repayment schedules
+            console.print(f"  [cyan]→[/cyan] Generating repayment schedules (this may take a moment)...")
+            schedules = loan_gen.generate_repayment_schedule(loans)
+            console.print(f"  [green]✓[/green] Generated {len(schedules)} repayment schedule entries")
+
+            # Insert schedules in batches
+            batch_size = 1000
+            if schedules:
+                with get_db_connection("loans_db") as conn:
+                    with conn.cursor() as cur:
+                        for i in range(0, len(schedules), batch_size):
+                            batch = schedules[i:i + batch_size]
+                            cur.executemany("""
+                                INSERT INTO repayment_schedule (
+                                    loan_id, installment_number, due_date, principal_amount,
+                                    interest_amount, total_amount, payment_date, payment_status
+                                )
+                                VALUES (
+                                    %(loan_id)s, %(installment_number)s, %(due_date)s,
+                                    %(principal_amount)s, %(interest_amount)s, %(total_amount)s,
+                                    %(payment_date)s, %(payment_status)s
+                                )
+                            """, batch)
+                        conn.commit()
+
+            # Generate guarantors
+            guarantors = loan_gen.generate_loan_guarantors(loans)
+            console.print(f"  [green]✓[/green] Generated {len(guarantors)} loan guarantors")
+
+            # Insert guarantors
+            if guarantors:
+                with get_db_connection("loans_db") as conn:
+                    with conn.cursor() as cur:
+                        cur.executemany("""
+                            INSERT INTO loan_guarantors (
+                                loan_id, guarantor_name, relationship, contact_info, guarantee_amount
+                            )
+                            VALUES (
+                                %(loan_id)s, %(guarantor_name)s, %(relationship)s,
+                                %(contact_info)s, %(guarantee_amount)s
+                            )
+                        """, guarantors)
+                        conn.commit()
+
+            # Generate risk assessments
+            risk_assessments = loan_gen.generate_risk_assessments(applications, loans)
+            console.print(f"  [green]✓[/green] Generated {len(risk_assessments)} risk assessments")
+
+            # Insert risk assessments
+            if risk_assessments:
+                with get_db_connection("loans_db") as conn:
+                    with conn.cursor() as cur:
+                        cur.executemany("""
+                            INSERT INTO risk_assessments (
+                                loan_id, application_id, assessment_date, risk_score,
+                                pd_probability, credit_grade, assessed_by
+                            )
+                            VALUES (
+                                %(loan_id)s, %(application_id)s, %(assessment_date)s,
+                                %(risk_score)s, %(pd_probability)s, %(credit_grade)s,
+                                %(assessed_by)s
+                            )
+                        """, risk_assessments)
+                        conn.commit()
+
+            return {
+                "applications": applications,
+                "loans": loans,
+                "collateral": collateral,
+                "schedules": schedules,
+                "guarantors": guarantors,
+                "risk_assessments": risk_assessments,
+            }
+
+        return self._execute_with_retry(_do_generate)
+
     def _show_summary(self) -> None:
         """Show generation summary."""
         console.print("\n[bold green]✓ Data Generation Complete![/bold green]\n")
@@ -453,9 +713,19 @@ class DataOrchestrator:
     def _show_database_counts(self) -> None:
         """Show record counts per database."""
         databases = {
-            "employees_db": ["departments", "employees", "training_programs"],
-            "customer_db": ["customer_profiles", "interactions", "satisfaction_surveys", "complaints", "campaigns", "campaign_responses"],
+            "employees_db": [
+                "departments", "employees", "training_programs",
+                "employee_training", "performance_reviews", "employee_assignments"
+            ],
+            "customer_db": [
+                "customer_profiles", "interactions", "satisfaction_surveys",
+                "complaints", "campaigns", "campaign_responses"
+            ],
             "accounts_db": ["customers", "accounts", "account_relationships", "transactions"],
+            "loans_db": [
+                "loan_applications", "loans", "collateral",
+                "repayment_schedule", "loan_guarantors", "risk_assessments"
+            ],
         }
 
         for db_name, tables in databases.items():

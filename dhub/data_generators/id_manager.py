@@ -10,10 +10,12 @@ class IDManager:
         """Initialize ID storage."""
         # Employees
         self.employee_ids: list[str] = []
+        self.employee_roles: dict[str, str] = {}  # Maps employee_id to role
         self.loan_officers: list[str] = []
         self.insurance_agents: list[str] = []
         self.compliance_officers: list[str] = []
         self.department_ids: list[str] = []
+        self.training_program_ids: list[str] = []
 
         # Customers
         self.customer_ids: list[str] = []
@@ -43,6 +45,7 @@ class IDManager:
     def add_employee(self, employee_id: str, role: str) -> None:
         """Add an employee and categorize by role."""
         self.employee_ids.append(employee_id)
+        self.employee_roles[employee_id] = role
 
         if "loan" in role.lower() or "lending" in role.lower():
             self.loan_officers.append(employee_id)
@@ -50,6 +53,17 @@ class IDManager:
             self.insurance_agents.append(employee_id)
         elif "compliance" in role.lower():
             self.compliance_officers.append(employee_id)
+
+    def get_employee_role(self, employee_id: str) -> str:
+        """Get the role of an employee.
+
+        Args:
+            employee_id: Employee ID to look up
+
+        Returns:
+            Employee role or empty string if not found
+        """
+        return self.employee_roles.get(employee_id, "")
 
     def add_customer(self, customer_id: str) -> None:
         """Add a customer ID."""

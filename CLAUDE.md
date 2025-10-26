@@ -43,6 +43,14 @@ DHub CLI (dhub/) ← Python package with Typer + Rich
 - `dhub/commands/db.py` - Database commands
 - `dhub/commands/seed.py` - Demo data seeding
 
+### Data Generators
+- `dhub/data_generators/id_manager.py` - Cross-database ID tracking
+- `dhub/data_generators/unique_generator.py` - Unique value generation with deduplication
+- `dhub/data_generators/employees.py` - Employee, training, reviews, assignments
+- `dhub/data_generators/customers.py` - Customers, accounts, transactions, CRM
+- `dhub/data_generators/loans.py` - Loan applications, loans, collateral, schedules
+- `dhub/data_generators/orchestrator.py` - Main coordinator with 5-phase pipeline
+
 ## CLI Commands Structure
 
 ```bash
@@ -153,12 +161,27 @@ app.add_typer(mycommand.app, name="mycommand", help="...")
 
 All 6 schemas are initialized on first PostgreSQL start:
 
-1. **employees** - HR system (departments, employees, salaries)
-2. **customer** - CRM (customers, contacts, interactions)
-3. **accounts** - Banking (accounts, transactions)
-4. **insurance** - Policies, claims, coverage
-5. **loans** - Loan applications, payments
-6. **compliance** - Regulatory tracking, audits
+1. **employees_db** (6 tables) - HR system
+   - departments, employees, training_programs
+   - employee_training, performance_reviews, employee_assignments
+
+2. **customer_db** (6 tables) - CRM system
+   - customer_profiles, interactions, satisfaction_surveys
+   - complaints, campaigns, campaign_responses
+
+3. **accounts_db** (4 tables) - Banking operations
+   - customers, accounts, account_relationships, transactions
+
+4. **loans_db** (6 tables) - Loan management
+   - loan_applications, loans, collateral
+   - repayment_schedule, loan_guarantors, risk_assessments
+
+5. **insurance_db** (5 tables) - Insurance products (not yet implemented)
+   - policies, claims, beneficiaries, coverage, premium_payments
+
+6. **compliance_db** (7 tables) - Regulatory compliance (not yet implemented)
+   - kyc_records, aml_checks, suspicious_activity_reports
+   - regulatory_reports, audit_logs, compliance_rules, rule_violations
 
 ## Troubleshooting Quick Ref
 
@@ -220,8 +243,8 @@ datahub_url = config.get_datahub_url()
 
 ### Seed Command
 ```bash
-dhub seed all --scale 0.1          # Quick demo (120 customers, 15 employees)
-dhub seed all --scale 1.0          # Base requirements (1200, 150)
+dhub seed all --scale 0.1          # Quick demo (~5,000 records)
+dhub seed all --scale 1.0          # Base requirements (~60,000 records)
 dhub seed status                   # Show record counts
 dhub seed clear --confirm          # Truncate all data
 ```
@@ -229,21 +252,54 @@ dhub seed clear --confirm          # Truncate all data
 ### Architecture
 ```
 dhub/data_generators/
-├── id_manager.py         # Cross-database ID tracking
-├── employees.py          # Phase 1: Employees & departments
-├── customers.py          # Phase 1-2: Customers & accounts
-└── orchestrator.py       # Main coordinator with scale_factor
+├── id_manager.py            # Cross-database ID tracking & role mapping
+├── unique_generator.py      # Unique value generation (prevents duplicates)
+├── employees.py             # Employees, training, reviews, assignments
+├── customers.py             # Customers, accounts, transactions, CRM
+├── loans.py                 # Complete loan lifecycle & risk assessment
+└── orchestrator.py          # 5-phase pipeline with retry logic
 ```
 
+### 5-Phase Generation Pipeline
+
+**Phase 1: Foundation Data**
+- departments, employees, training_programs
+- customers (master + profiles)
+
+**Phase 2: Core Banking Products**
+- accounts, account_relationships
+- transactions (10-20x accounts)
+
+**Phase 3: CRM & Customer Engagement**
+- interactions, satisfaction_surveys
+- complaints, campaigns, campaign_responses
+
+**Phase 4: Employee Development** (NEW)
+- employee_training (2-4 programs per employee)
+- performance_reviews (1-3 annual reviews)
+- employee_assignments (customer portfolios + branch coverage)
+
+**Phase 5: Loan Products** (NEW)
+- loan_applications (~35% of customers apply)
+- loans (with realistic amortization)
+- collateral, repayment_schedule
+- loan_guarantors, risk_assessments
+
 ### Scale Factor Design
-- **Fixed datasets** (don't scale): Departments (12), Training Programs (16-20), Branch Codes (15-20)
-- **Scalable datasets** (multiply by scale): Employees (base 150), Customers (base 1200), Accounts (proportional)
+- **Fixed datasets** (don't scale): Departments (12), Training Programs (16), Branch Codes (20)
+- **Scalable datasets** (multiply by scale): Employees (base 150), Customers (base 1200), Loans (proportional)
 - `scale_factor` parameter multiplies base counts while maintaining relationships
 
 ### Implementation Status
-**Phase 1-2 (✅ 40%)**: employees_db (departments, employees, training), customer_db (profiles), accounts_db (customers, accounts)
+**Phases 1-5 (✅ 85% Complete)**:
+- ✅ employees_db (6/6 tables populated)
+- ✅ customer_db (6/6 tables populated)
+- ✅ accounts_db (4/4 tables populated)
+- ✅ loans_db (6/6 tables populated)
 
-**Phase 3-6 (❌ 60%)**: Transactions, Loans, Insurance, Interactions, Campaigns, Compliance (KYC, AML, Audit)
+**Phases 6-7 (❌ 15% Remaining)**:
+- ⬜ insurance_db (0/5 tables)
+- ⬜ compliance_db (0/7 tables)
 
 ### Extending with New Phases
 ```python
@@ -268,27 +324,49 @@ def _generate_loans(self):
 ```
 
 ### Key Relationships Maintained
-- `customer_id`: accounts_db.customers ↔ customer_db.customer_profiles ↔ compliance_db.kyc_records
-- `employee_id`: Referenced as assigned_agent_id, loan_officer_id, processed_by, etc.
-- `account_id`: Links to transactions, loans (linked_account_id), insurance
+- `customer_id`: accounts_db.customers ↔ customer_db.customer_profiles ↔ loans_db.loan_applications
+- `employee_id`: Referenced as assigned_agent_id, officer_id, approved_by, assessed_by, reviewer_id, handled_by, processed_by
+- `account_id`: Links to transactions, account_relationships, loans (linked_account_id)
+- `application_id`: Links loan_applications ↔ loans
+- `loan_id`: Links loans → collateral, repayment_schedule, loan_guarantors, risk_assessments
+- `program_id`: Links training_programs ↔ employee_training
 - All FKs tracked in `IDManager` for referential integrity
 
 ### Data Generator Pattern
-1. Calculate scaled count: `int(BASE_COUNT * scale_factor)`
-2. Generate records with Faker + realistic distributions
-3. Store IDs in `id_manager` for cross-references
-4. Bulk insert with `executemany()` (batches of 500-1000)
-5. Maintain fixed percentages (e.g., 75% customers have accounts, 25% multiple)
+1. **Calculate scaled count**: `int(BASE_COUNT * scale_factor)`
+2. **Generate unique values**: Use `UniqueValueGenerator` for emails, phones (prevents duplicates)
+3. **Generate records**: Faker + realistic distributions (weighted random selections)
+4. **Store IDs**: Track in `id_manager` for cross-database references
+5. **Bulk insert**: Use `executemany()` with batches of 1,000 for large datasets
+6. **Maintain percentages**: Fixed ratios (e.g., 75% customers have accounts, 35% apply for loans)
+7. **Retry on errors**: Automatic retry with generator reset on constraint violations
 
 See `docs/data_generation.md` for full details.
 
 ## Future Extensions Ideas
-- Complete Phases 3-6 (transactions, loans, insurance, compliance)
-- DataHub API commands (create datasets, add lineage)
-- Data validation rules
-- Schema comparison tools
-- Ingestion automation
+- ✅ ~~Complete loan products (Phase 5)~~ - DONE
+- ⬜ Complete insurance products (Phase 6)
+- ⬜ Complete compliance tracking (Phase 7)
+- ⬜ DataHub API commands (create datasets, add lineage)
+- ⬜ Data validation rules
+- ⬜ Schema comparison tools
+- ⬜ Ingestion automation
+- ⬜ Real-time data generation for streaming demos
+
+## Recent Changes
+
+**2025-10-26**:
+- ✅ Added `unique_generator.py` for duplicate-free email/phone generation
+- ✅ Implemented Phase 4: Employee Development (training, reviews, assignments)
+- ✅ Implemented Phase 5: Loan Products (applications, loans, collateral, schedules, guarantors, risk assessments)
+- ✅ Extended `employees.py` with 3 new generator methods
+- ✅ Created `loans.py` generator with complete loan lifecycle
+- ✅ Updated orchestrator with 5-phase pipeline and retry logic
+- ✅ Extended `id_manager.py` with role mapping and training program tracking
+- ✅ All employees_db tables now populated (6/6)
+- ✅ All loans_db tables now populated (6/6)
+- ✅ Dataset now generates ~60,000 records @ scale 1.0 (was ~19,000)
 
 ---
-**Last Updated**: 2025-10-25
+**Last Updated**: 2025-10-26
 **Package**: dhub v0.1.0
