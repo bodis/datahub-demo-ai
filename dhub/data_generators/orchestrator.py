@@ -218,7 +218,51 @@ class DataOrchestrator:
                 """, accounts)
                 conn.commit()
 
-        return {"accounts": accounts}
+        # Generate account relationships
+        relationships = acc_gen.generate_account_relationships(accounts)
+        console.print(f"  [green]✓[/green] Generated {len(relationships)} account relationships")
+
+        # Insert relationships
+        if relationships:
+            with get_db_connection("accounts_db") as conn:
+                with conn.cursor() as cur:
+                    cur.executemany("""
+                        INSERT INTO account_relationships (
+                            primary_account_id, related_account_id, relationship_type, created_at
+                        )
+                        VALUES (
+                            %(primary_account_id)s, %(related_account_id)s,
+                            %(relationship_type)s, %(created_at)s
+                        )
+                    """, relationships)
+                    conn.commit()
+
+        # Generate transactions
+        transactions = acc_gen.generate_transactions(accounts)
+        console.print(f"  [green]✓[/green] Generated {len(transactions)} transactions")
+
+        # Insert transactions in batches (for performance)
+        batch_size = 1000
+        if transactions:
+            with get_db_connection("accounts_db") as conn:
+                with conn.cursor() as cur:
+                    for i in range(0, len(transactions), batch_size):
+                        batch = transactions[i:i + batch_size]
+                        cur.executemany("""
+                            INSERT INTO transactions (
+                                transaction_id, account_id, transaction_type, transaction_amount,
+                                transaction_date, description, balance_after,
+                                counterparty_account, processed_by
+                            )
+                            VALUES (
+                                %(transaction_id)s, %(account_id)s, %(transaction_type)s,
+                                %(transaction_amount)s, %(transaction_date)s, %(description)s,
+                                %(balance_after)s, %(counterparty_account)s, %(processed_by)s
+                            )
+                        """, batch)
+                    conn.commit()
+
+        return {"accounts": accounts, "relationships": relationships, "transactions": transactions}
 
     def _show_summary(self) -> None:
         """Show generation summary."""
@@ -248,7 +292,7 @@ class DataOrchestrator:
         databases = {
             "employees_db": ["departments", "employees", "training_programs"],
             "customer_db": ["customer_profiles"],
-            "accounts_db": ["customers", "accounts"],
+            "accounts_db": ["customers", "accounts", "account_relationships", "transactions"],
         }
 
         for db_name, tables in databases.items():

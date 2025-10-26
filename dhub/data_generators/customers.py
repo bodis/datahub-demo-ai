@@ -219,3 +219,177 @@ class AccountGenerator:
                 self.id_manager.add_account(account_id, customer["customer_id"])
 
         return accounts
+
+    def generate_account_relationships(self, accounts: list[dict]) -> list[dict]:
+        """Generate account relationships.
+
+        Creates relationships for:
+        - 20% of accounts: 1 connected account
+        - 5% of accounts: 2 connected accounts
+        """
+        relationships = []
+
+        # Only use active accounts for relationships
+        active_accounts = [acc for acc in accounts if acc["status"] == "active"]
+
+        if len(active_accounts) < 2:
+            return relationships
+
+        # Determine which accounts will have relationships
+        # 5% get 2 connections, 20% get 1 connection (25% total)
+        accounts_needing_relationships = []
+
+        # First, select 5% for 2 connections
+        two_connection_count = int(len(active_accounts) * 0.05)
+        accounts_with_two = random.sample(active_accounts, k=min(two_connection_count, len(active_accounts)))
+
+        # Then, select 20% for 1 connection (excluding those with 2)
+        remaining_accounts = [acc for acc in active_accounts if acc not in accounts_with_two]
+        one_connection_count = int(len(active_accounts) * 0.20)
+        accounts_with_one = random.sample(remaining_accounts, k=min(one_connection_count, len(remaining_accounts)))
+
+        relationship_types = ["joint_owner", "beneficiary", "authorized_user", "linked_savings"]
+
+        # Create relationships for accounts with 2 connections
+        for account in accounts_with_two:
+            # Select 2 different related accounts (excluding itself)
+            available = [acc for acc in active_accounts if acc["account_id"] != account["account_id"]]
+            if len(available) >= 2:
+                related_accounts = random.sample(available, k=2)
+
+                for related in related_accounts:
+                    relationship = {
+                        "primary_account_id": account["account_id"],
+                        "related_account_id": related["account_id"],
+                        "relationship_type": random.choice(relationship_types),
+                        "created_at": max(account["created_at"], related["created_at"]),
+                    }
+                    relationships.append(relationship)
+
+        # Create relationships for accounts with 1 connection
+        for account in accounts_with_one:
+            # Select 1 related account (excluding itself)
+            available = [acc for acc in active_accounts if acc["account_id"] != account["account_id"]]
+            if available:
+                related = random.choice(available)
+
+                relationship = {
+                    "primary_account_id": account["account_id"],
+                    "related_account_id": related["account_id"],
+                    "relationship_type": random.choice(relationship_types),
+                    "created_at": max(account["created_at"], related["created_at"]),
+                }
+                relationships.append(relationship)
+
+        return relationships
+
+    def generate_transactions(self, accounts: list[dict]) -> list[dict]:
+        """Generate transactions for accounts.
+
+        Creates 10-20x more transactions than accounts.
+        Distribution:
+        - 70% spending (withdrawal, payment, fee)
+        - 30% income (deposit, salary, interest)
+        """
+        transactions = []
+
+        # Calculate total transactions (10-20x accounts)
+        transaction_multiplier = random.uniform(10, 20)
+        total_transactions = int(len(accounts) * transaction_multiplier)
+
+        # Transaction types with weights
+        spending_types = {
+            "withdrawal": 0.40,
+            "payment": 0.45,
+            "fee": 0.15,
+        }
+
+        income_types = {
+            "deposit": 0.50,
+            "salary": 0.30,
+            "interest": 0.15,
+            "refund": 0.05,
+        }
+
+        # Generate transactions
+        for i in range(total_transactions):
+            # Select random account
+            account = random.choice(accounts)
+
+            # Determine if spending or income (70% spending, 30% income)
+            is_spending = random.random() < 0.70
+
+            if is_spending:
+                transaction_type = CustomerGenerator._weighted_choice(spending_types)
+                # Spending amount based on account type and balance
+                max_amount = min(account["balance"] * 0.3, 5000)  # Max 30% of balance or $5000
+                amount = -round(random.uniform(5, max_amount), 2) if max_amount > 5 else -round(random.uniform(1, 50), 2)
+            else:
+                transaction_type = CustomerGenerator._weighted_choice(income_types)
+                # Income amount
+                if transaction_type == "salary":
+                    amount = round(random.uniform(1000, 8000), 2)
+                elif transaction_type == "deposit":
+                    amount = round(random.uniform(50, 3000), 2)
+                elif transaction_type == "interest":
+                    amount = round(account["balance"] * random.uniform(0.001, 0.01), 2)
+                else:  # refund
+                    amount = round(random.uniform(10, 500), 2)
+
+            # Transaction date: between account opening and now
+            opened_date = account["opened_date"] if isinstance(account["opened_date"], datetime) else datetime.combine(account["opened_date"], datetime.min.time())
+            days_since_opened = (datetime.now() - opened_date).days
+
+            if days_since_opened > 0:
+                random_days = random.randint(0, days_since_opened)
+                transaction_date = opened_date + timedelta(days=random_days, hours=random.randint(0, 23), minutes=random.randint(0, 59))
+            else:
+                transaction_date = opened_date
+
+            # Calculate balance after (simplified - actual balance would need sorted transactions)
+            balance_after = account["balance"] + amount
+
+            # Generate transaction ID
+            transaction_id = f"TXN-{uuid.uuid4().hex[:16].upper()}"
+
+            # Description based on type
+            descriptions = {
+                "withdrawal": ["ATM Withdrawal", "Cash Withdrawal", "Branch Withdrawal"],
+                "payment": [f"Payment to {fake.company()}", f"Online Purchase - {fake.company()}", f"Bill Payment - {fake.bs()}"],
+                "fee": ["Monthly Maintenance Fee", "ATM Fee", "Overdraft Fee", "Wire Transfer Fee"],
+                "deposit": ["Cash Deposit", "Check Deposit", "Mobile Deposit"],
+                "salary": [f"Salary - {fake.company()}", "Payroll Deposit", "Direct Deposit"],
+                "interest": ["Interest Credit", "Savings Interest"],
+                "refund": [f"Refund from {fake.company()}", "Purchase Refund", "Credit Adjustment"],
+            }
+
+            description = random.choice(descriptions.get(transaction_type, ["Transaction"]))
+
+            # Counterparty account (for transfers and payments)
+            counterparty = None
+            if transaction_type in ["payment", "withdrawal"] and random.random() < 0.3:
+                counterparty = f"{random.randint(1000000000, 9999999999)}"
+
+            # Processed by employee (30% are manual, 70% automated)
+            processed_by = None
+            if random.random() < 0.30 and self.id_manager.employee_ids:
+                processed_by = random.choice(self.id_manager.employee_ids)
+
+            transaction = {
+                "transaction_id": transaction_id,
+                "account_id": account["account_id"],
+                "transaction_type": transaction_type,
+                "transaction_amount": amount,
+                "transaction_date": transaction_date,
+                "description": description,
+                "balance_after": balance_after,
+                "counterparty_account": counterparty,
+                "processed_by": processed_by,
+            }
+
+            transactions.append(transaction)
+
+        # Sort by transaction date for more realistic data
+        transactions.sort(key=lambda x: x["transaction_date"])
+
+        return transactions
