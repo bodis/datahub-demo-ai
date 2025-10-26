@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from faker import Faker
 
 from dhub.data_generators.id_manager import IDManager
+from dhub.data_generators.unique_generator import UniqueValueGenerator
 
 fake = Faker()
 
@@ -58,6 +59,7 @@ class EmployeeGenerator:
         self.id_manager = id_manager
         self.num_employees = num_employees
         self.branch_codes = [f"BR{str(i).zfill(3)}" for i in range(1, 21)]  # 20 branches
+        self.unique_gen = UniqueValueGenerator(fake)
 
     def generate_departments(self) -> list[dict]:
         """Generate department records."""
@@ -119,15 +121,16 @@ class EmployeeGenerator:
             salary_range = self.SALARY_RANGES.get(role, (40000, 70000))
             salary = round(random.uniform(*salary_range), 2)
 
-            # Generate phone number that fits VARCHAR(20)
-            phone = f"{random.randint(200, 999)}-{random.randint(100, 999)}-{random.randint(1000, 9999)}"
+            # Generate unique email and phone
+            email = self.unique_gen.generate_unique_email()
+            phone = self.unique_gen.generate_unique_phone()
 
             employee = {
                 "employee_id": employee_id,
                 "employee_number": employee_number,
                 "first_name": fake.first_name(),
                 "last_name": fake.last_name(),
-                "email": fake.email(),
+                "email": email,
                 "phone": phone,
                 "role": role,
                 "department": self._get_department_name(dept_id),

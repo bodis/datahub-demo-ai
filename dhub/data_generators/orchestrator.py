@@ -1,8 +1,10 @@
 """Data generation orchestrator."""
 
+import time
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
+import psycopg
 
 from dhub.config import config
 from dhub.data_generators.customers import AccountGenerator, CRMGenerator, CustomerGenerator
@@ -61,6 +63,42 @@ class DataOrchestrator:
         console.print(f"  Employees: [yellow]{self.num_employees}[/yellow] (base: {self.BASE_EMPLOYEES})")
         console.print(f"  Customers: [yellow]{self.num_customers}[/yellow] (base: {self.BASE_CUSTOMERS})")
 
+    def _execute_with_retry(self, func, max_retries: int = 3, retry_delay: float = 1.0):
+        """Execute a function with retry logic for database constraint violations.
+
+        Args:
+            func: Function to execute
+            max_retries: Maximum number of retry attempts
+            retry_delay: Delay between retries in seconds
+
+        Returns:
+            Result from the function
+
+        Raises:
+            Exception: If all retries are exhausted
+        """
+        for attempt in range(max_retries):
+            try:
+                return func()
+            except psycopg.errors.UniqueViolation as e:
+                if attempt < max_retries - 1:
+                    console.print(
+                        f"  [yellow]⚠[/yellow] Unique constraint violation detected (attempt {attempt + 1}/{max_retries})"
+                    )
+                    console.print(f"  [dim]Error: {str(e).split(chr(10))[0]}[/dim]")
+                    console.print(f"  [dim]Retrying in {retry_delay}s...[/dim]")
+                    time.sleep(retry_delay)
+                    # Reset generators for retry
+                    self.id_manager = IDManager()
+                    self.generated_data = {}
+                else:
+                    console.print(f"  [red]✗[/red] Failed after {max_retries} attempts")
+                    raise
+            except Exception as e:
+                # For non-constraint errors, fail immediately
+                console.print(f"  [red]✗[/red] Unexpected error: {type(e).__name__}")
+                raise
+
     def generate_all(self) -> None:
         """Generate all data across databases."""
         console.print("\n[bold cyan]DataHub Demo Data Generation[/bold cyan]")
@@ -101,105 +139,111 @@ class DataOrchestrator:
         self._show_summary()
 
     def _generate_employees(self) -> dict:
-        """Generate employee data."""
-        emp_gen = EmployeeGenerator(self.id_manager, self.num_employees)
+        """Generate employee data with retry logic."""
+        def _do_generate():
+            emp_gen = EmployeeGenerator(self.id_manager, self.num_employees)
 
-        # Generate departments
-        departments = emp_gen.generate_departments()
-        console.print(f"  [green]✓[/green] Generated {len(departments)} departments")
+            # Generate departments
+            departments = emp_gen.generate_departments()
+            console.print(f"  [green]✓[/green] Generated {len(departments)} departments")
 
-        # Insert departments
-        with get_db_connection("employees_db") as conn:
-            with conn.cursor() as cur:
-                cur.executemany("""
-                    INSERT INTO departments (department_id, department_name, department_head_id, budget)
-                    VALUES (%(department_id)s, %(department_name)s, %(department_head_id)s, %(budget)s)
-                """, departments)
-                conn.commit()
+            # Insert departments
+            with get_db_connection("employees_db") as conn:
+                with conn.cursor() as cur:
+                    cur.executemany("""
+                        INSERT INTO departments (department_id, department_name, department_head_id, budget)
+                        VALUES (%(department_id)s, %(department_name)s, %(department_head_id)s, %(budget)s)
+                    """, departments)
+                    conn.commit()
 
-        # Generate employees
-        employees = emp_gen.generate_employees()
-        console.print(f"  [green]✓[/green] Generated {len(employees)} employees")
+            # Generate employees
+            employees = emp_gen.generate_employees()
+            console.print(f"  [green]✓[/green] Generated {len(employees)} employees")
 
-        # Insert employees
-        with get_db_connection("employees_db") as conn:
-            with conn.cursor() as cur:
-                cur.executemany("""
-                    INSERT INTO employees (
-                        employee_id, employee_number, first_name, last_name, email, phone,
-                        role, department, branch_code, manager_id, hire_date,
-                        termination_date, employment_status, salary
-                    )
-                    VALUES (
-                        %(employee_id)s, %(employee_number)s, %(first_name)s, %(last_name)s,
-                        %(email)s, %(phone)s, %(role)s, %(department)s, %(branch_code)s,
-                        %(manager_id)s, %(hire_date)s, %(termination_date)s,
-                        %(employment_status)s, %(salary)s
-                    )
-                """, employees)
-                conn.commit()
+            # Insert employees
+            with get_db_connection("employees_db") as conn:
+                with conn.cursor() as cur:
+                    cur.executemany("""
+                        INSERT INTO employees (
+                            employee_id, employee_number, first_name, last_name, email, phone,
+                            role, department, branch_code, manager_id, hire_date,
+                            termination_date, employment_status, salary
+                        )
+                        VALUES (
+                            %(employee_id)s, %(employee_number)s, %(first_name)s, %(last_name)s,
+                            %(email)s, %(phone)s, %(role)s, %(department)s, %(branch_code)s,
+                            %(manager_id)s, %(hire_date)s, %(termination_date)s,
+                            %(employment_status)s, %(salary)s
+                        )
+                    """, employees)
+                    conn.commit()
 
-        # Generate training programs
-        programs = emp_gen.generate_training_programs()
-        console.print(f"  [green]✓[/green] Generated {len(programs)} training programs")
+            # Generate training programs
+            programs = emp_gen.generate_training_programs()
+            console.print(f"  [green]✓[/green] Generated {len(programs)} training programs")
 
-        with get_db_connection("employees_db") as conn:
-            with conn.cursor() as cur:
-                cur.executemany("""
-                    INSERT INTO training_programs (
-                        program_id, program_name, description, duration_hours
-                    )
-                    VALUES (%(program_id)s, %(program_name)s, %(description)s, %(duration_hours)s)
-                """, programs)
-                conn.commit()
+            with get_db_connection("employees_db") as conn:
+                with conn.cursor() as cur:
+                    cur.executemany("""
+                        INSERT INTO training_programs (
+                            program_id, program_name, description, duration_hours
+                        )
+                        VALUES (%(program_id)s, %(program_name)s, %(description)s, %(duration_hours)s)
+                    """, programs)
+                    conn.commit()
 
-        return {"departments": departments, "employees": employees, "programs": programs}
+            return {"departments": departments, "employees": employees, "programs": programs}
+
+        return self._execute_with_retry(_do_generate)
 
     def _generate_customers(self) -> dict:
-        """Generate customer data."""
-        cust_gen = CustomerGenerator(self.id_manager, self.num_customers)
+        """Generate customer data with retry logic."""
+        def _do_generate():
+            cust_gen = CustomerGenerator(self.id_manager, self.num_customers)
 
-        # Generate customer master (accounts_db)
-        customers = cust_gen.generate_customers_master()
-        console.print(f"  [green]✓[/green] Generated {len(customers)} customers (master)")
+            # Generate customer master (accounts_db)
+            customers = cust_gen.generate_customers_master()
+            console.print(f"  [green]✓[/green] Generated {len(customers)} customers (master)")
 
-        # Insert into accounts_db (simpler schema)
-        with get_db_connection("accounts_db") as conn:
-            with conn.cursor() as cur:
-                cur.executemany("""
-                    INSERT INTO customers (
-                        customer_id, first_name, last_name, date_of_birth, email, phone, created_at
-                    )
-                    VALUES (
-                        %(customer_id)s, %(first_name)s, %(last_name)s, %(date_of_birth)s,
-                        %(email)s, %(phone)s, %(created_at)s
-                    )
-                """, customers)
-                conn.commit()
+            # Insert into accounts_db (simpler schema)
+            with get_db_connection("accounts_db") as conn:
+                with conn.cursor() as cur:
+                    cur.executemany("""
+                        INSERT INTO customers (
+                            customer_id, first_name, last_name, date_of_birth, email, phone, created_at
+                        )
+                        VALUES (
+                            %(customer_id)s, %(first_name)s, %(last_name)s, %(date_of_birth)s,
+                            %(email)s, %(phone)s, %(created_at)s
+                        )
+                    """, customers)
+                    conn.commit()
 
-        # Generate customer profiles (customer_db)
-        profiles = cust_gen.generate_customer_profiles(customers)
-        console.print(f"  [green]✓[/green] Generated {len(profiles)} customer profiles (CRM)")
+            # Generate customer profiles (customer_db)
+            profiles = cust_gen.generate_customer_profiles(customers)
+            console.print(f"  [green]✓[/green] Generated {len(profiles)} customer profiles (CRM)")
 
-        # Insert into customer_db
-        with get_db_connection("customer_db") as conn:
-            with conn.cursor() as cur:
-                cur.executemany("""
-                    INSERT INTO customer_profiles (
-                        customer_id, full_name, email, phone, address, city, country,
-                        customer_segment, customer_status, onboarding_date, assigned_agent_id,
-                        kyc_status, risk_rating, created_at, updated_at
-                    )
-                    VALUES (
-                        %(customer_id)s, %(full_name)s, %(email)s, %(phone)s, %(address)s,
-                        %(city)s, %(country)s, %(customer_segment)s, %(customer_status)s,
-                        %(onboarding_date)s, %(assigned_agent_id)s, %(kyc_status)s,
-                        %(risk_rating)s, %(created_at)s, %(updated_at)s
-                    )
-                """, profiles)
-                conn.commit()
+            # Insert into customer_db
+            with get_db_connection("customer_db") as conn:
+                with conn.cursor() as cur:
+                    cur.executemany("""
+                        INSERT INTO customer_profiles (
+                            customer_id, full_name, email, phone, address, city, country,
+                            customer_segment, customer_status, onboarding_date, assigned_agent_id,
+                            kyc_status, risk_rating, created_at, updated_at
+                        )
+                        VALUES (
+                            %(customer_id)s, %(full_name)s, %(email)s, %(phone)s, %(address)s,
+                            %(city)s, %(country)s, %(customer_segment)s, %(customer_status)s,
+                            %(onboarding_date)s, %(assigned_agent_id)s, %(kyc_status)s,
+                            %(risk_rating)s, %(created_at)s, %(updated_at)s
+                        )
+                    """, profiles)
+                    conn.commit()
 
-        return {"master": customers, "profiles": profiles}
+            return {"master": customers, "profiles": profiles}
+
+        return self._execute_with_retry(_do_generate)
 
     def _generate_accounts(self, customers: list[dict]) -> dict:
         """Generate account data."""

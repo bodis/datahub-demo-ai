@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from faker import Faker
 
 from dhub.data_generators.id_manager import IDManager
+from dhub.data_generators.unique_generator import UniqueValueGenerator
 
 fake = Faker()
 
@@ -43,6 +44,7 @@ class CustomerGenerator:
         """Initialize customer generator."""
         self.id_manager = id_manager
         self.num_customers = num_customers
+        self.unique_gen = UniqueValueGenerator(fake)
 
     def generate_customers_master(self) -> list[dict]:
         """Generate customer master records for accounts_db."""
@@ -60,13 +62,13 @@ class CustomerGenerator:
             # Created date in last 7 years
             created_at = fake.date_time_between(start_date="-7y", end_date="now")
 
-            # Generate phone that fits VARCHAR(20)
-            phone = f"{random.randint(200, 999)}-{random.randint(100, 999)}-{random.randint(1000, 9999)}"
+            # Generate unique email and phone
+            email = self.unique_gen.generate_unique_email()
+            phone = self.unique_gen.generate_unique_phone()
 
             # Store full customer data for profiles
             first_name = fake.first_name()
             last_name = fake.last_name()
-            email = fake.email()
             city = fake.city()
             state = fake.state_abbr()
             zip_code = fake.zipcode()
