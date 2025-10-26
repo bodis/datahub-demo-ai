@@ -583,124 +583,21 @@ def delete_tag(tag: str) -> bool:
     return delete_entity(urn)
 
 
-def get_dataset_details(urn: str, headers: Dict[str, str], gms_url: str) -> Dict:
-    """Fetch detailed information about a dataset including columns, stats, and relationships.
+# Import helper modules for better organization
+from dhub.commands.datahub_client import fetch_dataset_details
+from dhub.commands.datahub_utils import parse_table_urn
+from dhub.commands.datahub_display import (
+    display_table_header,
+    display_columns_table,
+    display_column_statistics,
+    print_yaml_output,
+    display_summary,
+)
 
-    Args:
-        urn: Dataset URN
-        headers: HTTP headers for authentication
-        gms_url: DataHub GMS server URL
 
-    Returns:
-        Dictionary with detailed dataset information including columns
-    """
-    details = {
-        "columns": [],
-        "description": None,
-        "tags": [],
-        "glossary_terms": [],
-        "upstream_tables": [],
-        "downstream_tables": [],
-        "properties": {},
-    }
-
-    try:
-        # Use DataHub GraphQL API to fetch dataset details
-        graphql_url = f"{gms_url}/api/graphql"
-
-        # GraphQL query to fetch dataset with schema and properties
-        # Simplified query without nested glossaryTerms and lineage for now
-        query = """
-        query getDataset($urn: String!) {
-          dataset(urn: $urn) {
-            urn
-            properties {
-              description
-              customProperties {
-                key
-                value
-              }
-            }
-            schemaMetadata {
-              fields {
-                fieldPath
-                nativeDataType
-                nullable
-                description
-              }
-            }
-            tags {
-              tags {
-                tag {
-                  urn
-                  name
-                }
-              }
-            }
-          }
-        }
-        """
-
-        request_body = {
-            "query": query,
-            "variables": {"urn": urn}
-        }
-
-        response = requests.post(graphql_url, json=request_body, headers=headers, timeout=10)
-
-        if response.status_code != 200:
-            return details
-
-        data = response.json()
-
-        # Check for GraphQL errors
-        if data.get("errors"):
-            return details
-
-        dataset = data.get("data", {}).get("dataset")
-
-        if not dataset:
-            return details
-
-        # Extract dataset properties
-        if dataset.get("properties"):
-            props = dataset["properties"]
-            details["description"] = props.get("description")
-            if props.get("customProperties"):
-                details["properties"] = {
-                    prop["key"]: prop["value"]
-                    for prop in props["customProperties"]
-                }
-
-        # Extract schema metadata (columns)
-        if dataset.get("schemaMetadata") and dataset["schemaMetadata"].get("fields"):
-            for field in dataset["schemaMetadata"]["fields"]:
-                col_info = {
-                    "name": field.get("fieldPath"),
-                    "type": field.get("nativeDataType"),
-                    "nullable": field.get("nullable", True),
-                    "description": field.get("description"),
-                }
-
-                details["columns"].append(col_info)
-
-        # Extract tags for the dataset
-        if dataset.get("tags") and dataset["tags"].get("tags"):
-            details["tags"] = [
-                tag["tag"].get("name", tag["tag"]["urn"].split(":")[-1])
-                for tag in dataset["tags"]["tags"]
-                if tag.get("tag")
-            ]
-
-        # Note: glossaryTerms, upstreamLineage, and column-level statistics (datasetProfile)
-        # require more complex queries or different API endpoints in this DataHub version
-
-    except Exception as e:
-        # Return partial details if something fails
-        pass
-
-    return details
-
+# ============================================================================
+# CLI Commands
+# ============================================================================
 
 @app.command("clear")
 def clear_command(
@@ -1401,44 +1298,20 @@ def list_tables_command(
                 continue
 
             # Parse the URN to extract database, schema, and table
-            try:
-                # Extract the part between parentheses
-                parts = urn.split("(", 1)[1].rsplit(")", 1)[0]
-                components = parts.split(",")
+            platform, db_name, schema_name, table_name, environment = parse_table_urn(urn)
 
-                if len(components) >= 2:
-                    platform = components[0].split(":")[-1]  # Extract platform (e.g., "postgres")
-                    full_table_name = components[1]  # e.g., "employees_db.public.departments"
-                    environment = components[2] if len(components) > 2 else "PROD"
-
-                    # Split database.schema.table
-                    name_parts = full_table_name.split(".")
-                    if len(name_parts) == 3:
-                        db_name, schema_name, table_name = name_parts
-                    elif len(name_parts) == 2:
-                        db_name = "unknown"
-                        schema_name, table_name = name_parts
-                    else:
-                        db_name = "unknown"
-                        schema_name = "public"
-                        table_name = full_table_name
-
-                    # Apply database filter if specified
-                    if database and db_name != database:
-                        continue
-
-                    tables_data.append({
-                        "platform": platform,
-                        "database": db_name,
-                        "schema": schema_name,
-                        "table": table_name,
-                        "environment": environment,
-                        "urn": urn,
-                    })
-            except Exception as e:
-                if not yaml_format:
-                    console.print(f"[yellow]Warning: Could not parse URN: {urn}[/yellow]")
+            # Apply database filter if specified
+            if database and db_name != database:
                 continue
+
+            tables_data.append({
+                "platform": platform,
+                "database": db_name,
+                "schema": schema_name,
+                "table": table_name,
+                "environment": environment,
+                "urn": urn,
+            })
 
         if not tables_data:
             if not yaml_format:
@@ -1464,66 +1337,13 @@ def list_tables_command(
                 task = progress.add_task("Fetching metadata...", total=len(tables_data))
 
                 for table_info in tables_data:
-                    details = get_dataset_details(table_info["urn"], headers, gms_url)
+                    details = fetch_dataset_details(table_info["urn"], headers, gms_url)
                     table_info.update(details)
                     progress.advance(task)
 
         # Output in YAML format
         if yaml_format:
-            # Prepare data for YAML export
-            output_data = {
-                "databases": {},
-            }
-
-            for table_info in tables_data:
-                db_name = table_info["database"]
-                schema_name = table_info["schema"]
-                table_name = table_info["table"]
-
-                # Initialize database structure if not exists
-                if db_name not in output_data["databases"]:
-                    output_data["databases"][db_name] = {
-                        "schemas": {}
-                    }
-
-                # Initialize schema structure if not exists
-                if schema_name not in output_data["databases"][db_name]["schemas"]:
-                    output_data["databases"][db_name]["schemas"][schema_name] = {
-                        "tables": {}
-                    }
-
-                # Build table data
-                table_data = {
-                    "platform": table_info["platform"],
-                    "environment": table_info["environment"],
-                    "urn": table_info["urn"],
-                }
-
-                # Add detailed information if with_columns was specified
-                if with_columns:
-                    if table_info.get("description"):
-                        table_data["description"] = table_info["description"]
-                    if table_info.get("tags"):
-                        table_data["tags"] = table_info["tags"]
-                    if table_info.get("properties"):
-                        table_data["properties"] = table_info["properties"]
-                    if table_info.get("columns"):
-                        table_data["columns"] = []
-                        for col in table_info["columns"]:
-                            col_data = {
-                                "name": col["name"],
-                                "type": col["type"],
-                                "nullable": col["nullable"],
-                            }
-                            if col.get("description"):
-                                col_data["description"] = col["description"]
-
-                            table_data["columns"].append(col_data)
-
-                output_data["databases"][db_name]["schemas"][schema_name]["tables"][table_name] = table_data
-
-            # Print YAML only (no other output)
-            print(yaml.dump(output_data, default_flow_style=False, sort_keys=False, allow_unicode=True))
+            print_yaml_output(tables_data, with_columns)
             return
 
         # Display results in table format (non-YAML mode)
@@ -1550,54 +1370,18 @@ def list_tables_command(
                 )
 
             console.print(results_table)
+            display_summary(console, tables_data)
         else:
             # Detailed view with columns
             for table_info in tables_data:
-                console.print(f"\n[bold cyan]{'─' * 80}[/bold cyan]")
-                console.print(f"[bold magenta]{table_info['database']}[/bold magenta].[bold green]{table_info['schema']}[/bold green].[bold blue]{table_info['table']}[/bold blue]")
-
-                if table_info.get("description"):
-                    console.print(f"[dim]Description:[/dim] {table_info['description']}")
-
-                if table_info.get("tags"):
-                    console.print(f"[dim]Tags:[/dim] {', '.join(table_info['tags'])}")
+                display_table_header(console, table_info)
 
                 # Display columns
                 if table_info.get("columns") and len(table_info["columns"]) > 0:
-                    console.print(f"\n[bold]Columns ({len(table_info['columns'])}):[/bold]")
-
-                    columns_table = Table(show_header=True, header_style="bold cyan", box=None)
-                    columns_table.add_column("Name", style="blue", width=30)
-                    columns_table.add_column("Type", style="yellow", width=20)
-                    columns_table.add_column("Nullable", style="dim", width=8)
-                    columns_table.add_column("Description", style="white", width=40)
-
-                    for col in table_info["columns"]:
-                        nullable_str = "Yes" if col.get("nullable", True) else "No"
-                        desc = col.get("description", "") or ""
-                        if len(desc) > 40:
-                            desc = desc[:37] + "..."
-
-                        columns_table.add_row(
-                            col["name"] or "",
-                            col["type"] or "unknown",
-                            nullable_str,
-                            desc
-                        )
-
-                    console.print(columns_table)
-
-        # Show summary by database
-        if not with_columns:
-            db_counts = {}
-            for row in tables_data:
-                db_counts[row["database"]] = db_counts.get(row["database"], 0) + 1
-
-            console.print(f"\n[bold]Total:[/bold] {len(tables_data)} table(s)")
-            if len(db_counts) > 1:
-                console.print("\n[bold]By Database:[/bold]")
-                for db_name, count in sorted(db_counts.items()):
-                    console.print(f"  [cyan]{db_name}:[/cyan] {count} table(s)")
+                    display_columns_table(console, table_info["columns"])
+                    display_column_statistics(console, table_info["columns"])
+                else:
+                    console.print(f"\n[dim]No column metadata available for this table[/dim]")
 
         console.print(f"\n[dim]View in DataHub UI: {config.DATAHUB_FRONTEND_URL}/datasets[/dim]")
 

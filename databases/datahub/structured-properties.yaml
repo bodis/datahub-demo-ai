@@ -1,55 +1,48 @@
 # foreign_key_structured_properties.yaml
-# Define structured properties for FK relationships
-# These provide validation and searchability
+# Structured properties for cross-database FK relationships at column level
 
 - id: fk_target_table
   qualified_name: fk_target_table
   type: string
   cardinality: SINGLE
   display_name: FK Target Table
-  description: "Fully qualified name of the table this FK references (database.schema.table)"
-  
+  description: "Fully qualified name of the table this column references (database.schema.table)"
+  entity_types:
+    - urn:li:entityType:datahub.schemaField
+
 - id: fk_target_column
   qualified_name: fk_target_column
   type: string
   cardinality: SINGLE
   display_name: FK Target Column
-  description: "Column name in the target table"
-
-- id: fk_source_column
-  qualified_name: fk_source_column
-  type: string
-  cardinality: SINGLE
-  display_name: FK Source Column
-  description: "Column name in this table that references the target"
-
-- id: fk_join_condition
-  qualified_name: fk_join_condition
-  type: string
-  cardinality: SINGLE
-  display_name: FK JOIN Condition
-  description: "Ready-to-use SQL JOIN condition for AI agents"
+  description: "Column name in the target table that this column references"
+  entity_types:
+    - urn:li:entityType:datahub.schemaField
 
 - id: fk_cross_database
   qualified_name: fk_cross_database
   type: string
   cardinality: SINGLE
   display_name: Cross-Database FK
-  description: "Whether this FK crosses database boundaries (true/false)"
+  description: "Whether this FK references a table in a different database (true/false)"
   allowed_values:
     - value: "true"
       description: "FK references table in different database"
     - value: "false"
       description: "FK references table in same database"
+  entity_types:
+    - urn:li:entityType:datahub.schemaField
 
-- id: fk_constraint_name
-  qualified_name: fk_constraint_name
+- id: fk_relationship_description
+  qualified_name: fk_relationship_description
   type: string
   cardinality: SINGLE
-  display_name: FK Constraint Name
-  description: "Name of the foreign key constraint"
+  display_name: FK Relationship Description
+  description: "Human-readable description of this foreign key relationship"
+  entity_types:
+    - urn:li:entityType:datahub.schemaField
 
 # To apply these structured properties:
 # 1. Save this file as foreign_key_properties.yaml
 # 2. Run: datahub properties upsert -f foreign_key_properties.yaml
-# 3. Then assign to datasets programmatically
+# 3. Then assign values to schema fields (columns) programmatically
