@@ -187,6 +187,7 @@ Get help:
 dhub --help
 dhub db --help
 dhub seed --help
+dhub datahub --help
 ```
 
 ## Environment Configuration
@@ -241,6 +242,31 @@ dhub seed status
 ```
 
 See [docs/data_generation.md](docs/data_generation.md) for details.
+
+## DataHub Metadata Management
+
+Import and manage DataHub metadata (domains, glossaries) from CSV files:
+
+```bash
+# Import domains and glossaries from all subdirectories
+dhub datahub import-all
+
+# Import from specific subdirectory
+dhub datahub import-all --subdirectory bank
+
+# Import only domains or glossaries
+dhub datahub import-domains --subdirectory bank
+dhub datahub import-glossaries --subdirectory bank
+
+# Clear metadata (requires confirmation)
+dhub datahub clear --subdirectory bank --confirm
+```
+
+CSV files should be placed in `databases/imports/<subdirectory>/`:
+- `domains.csv` - Domain hierarchy definitions
+- `glossaries.csv` - Glossary terms with optional domain associations
+
+See [docs/datahub.md](docs/datahub.md) for details.
 
 ## Use Cases & Demonstrations
 

@@ -43,6 +43,9 @@ class Config:
     OUTPUT_FORMAT = os.getenv("OUTPUT_FORMAT", "table")
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
+    # DataHub Imports Configuration
+    DATAHUB_IMPORTS_ROOT = os.getenv("DATAHUB_IMPORTS_ROOT", "databases/imports")
+
     @classmethod
     def get_datahub_url(cls) -> str:
         """Get DataHub GMS URL."""
@@ -62,6 +65,16 @@ class Config:
     def get_all_databases(cls) -> list[str]:
         """Get list of all databases including demo databases."""
         return cls.DEMO_DATABASES
+
+    @classmethod
+    def get_imports_root(cls) -> Path:
+        """Get the root path for DataHub imports."""
+        root_path = Path(cls.DATAHUB_IMPORTS_ROOT)
+        if not root_path.is_absolute():
+            # Make it relative to the project root (parent of dhub directory)
+            project_root = Path(__file__).parent.parent
+            root_path = project_root / root_path
+        return root_path
 
 
 # Global config instance
