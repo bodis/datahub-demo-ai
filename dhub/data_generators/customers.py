@@ -393,3 +393,383 @@ class AccountGenerator:
         transactions.sort(key=lambda x: x["transaction_date"])
 
         return transactions
+
+
+class CRMGenerator:
+    """Generate CRM data for customer_db (interactions, complaints, campaigns)."""
+
+    INTERACTION_TYPES = {
+        "inquiry": 0.35,
+        "support": 0.30,
+        "complaint": 0.15,
+        "account_update": 0.10,
+        "product_inquiry": 0.10,
+    }
+
+    CHANNELS = {
+        "phone": 0.30,
+        "email": 0.25,
+        "web": 0.20,
+        "mobile_app": 0.15,
+        "branch": 0.10,
+    }
+
+    OUTCOMES = {
+        "resolved": 0.70,
+        "follow_up_needed": 0.20,
+        "escalated": 0.10,
+    }
+
+    COMPLAINT_TYPES = {
+        "service": 0.35,
+        "fee": 0.25,
+        "product": 0.20,
+        "fraud": 0.10,
+        "other": 0.10,
+    }
+
+    COMPLAINT_STATUS = {
+        "resolved": 0.60,
+        "investigating": 0.20,
+        "closed": 0.15,
+        "open": 0.05,
+    }
+
+    PRIORITY = {
+        "low": 0.50,
+        "medium": 0.30,
+        "high": 0.15,
+        "critical": 0.05,
+    }
+
+    CAMPAIGN_TYPES = {
+        "email": 0.40,
+        "digital": 0.30,
+        "cross_sell": 0.20,
+        "direct_mail": 0.10,
+    }
+
+    RESPONSE_TYPES = {
+        "opened": 0.40,
+        "clicked": 0.30,
+        "purchased": 0.20,
+        "unsubscribed": 0.10,
+    }
+
+    def __init__(self, id_manager: IDManager, scale_factor: float = 1.0):
+        """Initialize CRM generator."""
+        self.id_manager = id_manager
+        self.scale_factor = scale_factor
+
+    def generate_interactions(self, customers: list[dict]) -> list[dict]:
+        """Generate customer interactions (0-5 per customer)."""
+        interactions = []
+
+        for customer in customers:
+            # Each customer has 0-5 interactions
+            num_interactions = random.choices(
+                [0, 1, 2, 3, 4, 5],
+                weights=[0.20, 0.25, 0.25, 0.15, 0.10, 0.05],
+                k=1
+            )[0]
+
+            customer_created = customer["created_at"]
+
+            for _ in range(num_interactions):
+                interaction_id = f"INT-{uuid.uuid4().hex[:12].upper()}"
+
+                interaction_type = CustomerGenerator._weighted_choice(self.INTERACTION_TYPES)
+                channel = CustomerGenerator._weighted_choice(self.CHANNELS)
+                outcome = CustomerGenerator._weighted_choice(self.OUTCOMES)
+
+                # Interaction date: between customer creation and now
+                days_since = (datetime.now() - customer_created).days
+                if days_since > 0:
+                    random_days = random.randint(0, days_since)
+                    interaction_date = customer_created + timedelta(
+                        days=random_days,
+                        hours=random.randint(8, 18),
+                        minutes=random.randint(0, 59)
+                    )
+                else:
+                    interaction_date = customer_created
+
+                # Duration based on channel and type
+                if channel in ["phone", "branch"]:
+                    duration = random.randint(5, 45)
+                elif channel == "web":
+                    duration = random.randint(2, 15)
+                else:  # email, mobile_app
+                    duration = random.randint(1, 10)
+
+                # Handled by employee (80% of the time)
+                handled_by = None
+                if random.random() < 0.80 and self.id_manager.employee_ids:
+                    handled_by = random.choice(self.id_manager.employee_ids)
+
+                # Notes
+                notes_templates = [
+                    f"Customer inquired about {fake.bs()}",
+                    f"Discussed {interaction_type} regarding account services",
+                    f"Provided support for {fake.catch_phrase().lower()}",
+                    f"Customer requested information about {fake.bs()}",
+                    f"Handled {interaction_type} through {channel} channel",
+                ]
+
+                interaction = {
+                    "interaction_id": interaction_id,
+                    "customer_id": customer["customer_id"],
+                    "interaction_type": interaction_type,
+                    "channel": channel,
+                    "interaction_date": interaction_date,
+                    "duration_minutes": duration,
+                    "notes": random.choice(notes_templates),
+                    "handled_by": handled_by,
+                    "outcome": outcome,
+                }
+
+                interactions.append(interaction)
+
+        return interactions
+
+    def generate_satisfaction_surveys(self, interactions: list[dict], customers: list[dict]) -> list[dict]:
+        """Generate satisfaction surveys (30% of interactions get surveyed)."""
+        surveys = []
+
+        # 30% of interactions get a survey
+        surveyed_interactions = random.sample(interactions, k=int(len(interactions) * 0.30))
+
+        for interaction in surveyed_interactions:
+            # NPS score: 0-10 (weighted towards positive)
+            nps_score = random.choices(
+                range(11),
+                weights=[2, 2, 3, 4, 5, 6, 8, 12, 15, 20, 23],
+                k=1
+            )[0]
+
+            # Satisfaction rating: 1-5 stars (correlated with NPS)
+            if nps_score >= 9:
+                satisfaction = random.choices([4, 5], weights=[0.3, 0.7], k=1)[0]
+            elif nps_score >= 7:
+                satisfaction = random.choices([3, 4, 5], weights=[0.2, 0.5, 0.3], k=1)[0]
+            elif nps_score >= 5:
+                satisfaction = random.choices([2, 3, 4], weights=[0.3, 0.5, 0.2], k=1)[0]
+            else:
+                satisfaction = random.choices([1, 2, 3], weights=[0.5, 0.3, 0.2], k=1)[0]
+
+            # Survey date: same day or 1-2 days after interaction
+            survey_date = (interaction["interaction_date"] + timedelta(days=random.randint(0, 2))).date()
+
+            # Comments (50% provide comments)
+            comments = None
+            if random.random() < 0.50:
+                if satisfaction >= 4:
+                    comments = random.choice([
+                        "Great service!",
+                        "Very helpful and professional.",
+                        "Quick resolution, thank you.",
+                        "Excellent customer service.",
+                    ])
+                elif satisfaction == 3:
+                    comments = random.choice([
+                        "Service was okay.",
+                        "Could be better.",
+                        "Average experience.",
+                    ])
+                else:
+                    comments = random.choice([
+                        "Long wait time.",
+                        "Issue not fully resolved.",
+                        "Disappointed with the service.",
+                        "Expected better.",
+                    ])
+
+            survey = {
+                "customer_id": interaction["customer_id"],
+                "interaction_id": interaction["interaction_id"],
+                "nps_score": nps_score,
+                "satisfaction_rating": satisfaction,
+                "survey_date": survey_date,
+                "comments": comments,
+            }
+
+            surveys.append(survey)
+
+        return surveys
+
+    def generate_complaints(self, customers: list[dict]) -> list[dict]:
+        """Generate complaints (8% of customers file complaints)."""
+        complaints = []
+
+        # 8% of customers file complaints
+        complaining_customers = random.sample(customers, k=int(len(customers) * 0.08))
+
+        for customer in complaining_customers:
+            complaint_id = f"CMP-{uuid.uuid4().hex[:12].upper()}"
+
+            complaint_type = CustomerGenerator._weighted_choice(self.COMPLAINT_TYPES)
+            status = CustomerGenerator._weighted_choice(self.COMPLAINT_STATUS)
+            priority = CustomerGenerator._weighted_choice(self.PRIORITY)
+
+            # Filed date: between customer creation and now
+            customer_created = customer["created_at"]
+            days_since = (datetime.now() - customer_created).days
+            if days_since > 0:
+                random_days = random.randint(0, days_since)
+                filed_date = customer_created + timedelta(days=random_days)
+            else:
+                filed_date = customer_created
+
+            # Resolved date and resolution time (if status is resolved or closed)
+            resolved_date = None
+            resolution_time_hours = None
+            if status in ["resolved", "closed"]:
+                resolution_hours = random.randint(1, 168)  # 1 hour to 1 week
+                resolved_date = filed_date + timedelta(hours=resolution_hours)
+                resolution_time_hours = resolution_hours
+
+            # Assigned to (90% assigned)
+            assigned_to = None
+            if random.random() < 0.90 and self.id_manager.employee_ids:
+                assigned_to = random.choice(self.id_manager.employee_ids)
+
+            # Description
+            descriptions = {
+                "service": [
+                    "Poor customer service experience",
+                    "Long wait times at branch",
+                    "Unhelpful support staff",
+                ],
+                "fee": [
+                    "Unexpected fees charged",
+                    "Fee disclosure issue",
+                    "Incorrect fee amount",
+                ],
+                "product": [
+                    "Product not as advertised",
+                    "Issues with account features",
+                    "Product defect",
+                ],
+                "fraud": [
+                    "Suspicious transaction",
+                    "Potential fraud detected",
+                    "Unauthorized account access",
+                ],
+                "other": [
+                    "General complaint",
+                    "Miscellaneous issue",
+                    "Other concern",
+                ],
+            }
+
+            complaint = {
+                "complaint_id": complaint_id,
+                "customer_id": customer["customer_id"],
+                "complaint_type": complaint_type,
+                "description": random.choice(descriptions[complaint_type]),
+                "status": status,
+                "priority": priority,
+                "filed_date": filed_date,
+                "resolved_date": resolved_date,
+                "resolution_time_hours": resolution_time_hours,
+                "assigned_to": assigned_to,
+            }
+
+            complaints.append(complaint)
+
+        return complaints
+
+    def generate_campaigns(self) -> list[dict]:
+        """Generate marketing campaigns (fixed number, 10-15 campaigns)."""
+        campaigns = []
+        num_campaigns = random.randint(10, 15)
+
+        segments = ["retail", "premium", "corporate", "private_banking", "all"]
+
+        campaign_names = [
+            "Summer Savings Boost",
+            "Premium Card Launch",
+            "Mortgage Rate Special",
+            "Student Account Promotion",
+            "Retirement Planning Seminar",
+            "Business Banking Growth",
+            "Digital Banking Adoption",
+            "Loan Refinance Campaign",
+            "Investment Product Launch",
+            "Holiday Season Rewards",
+            "New Year Financial Goals",
+            "Spring Home Equity Drive",
+            "Back to School Savings",
+            "Year-End Tax Planning",
+            "Mobile App Feature Release",
+        ]
+
+        # Shuffle and take num_campaigns
+        selected_names = random.sample(campaign_names, k=min(num_campaigns, len(campaign_names)))
+
+        for i, name in enumerate(selected_names):
+            campaign_id = f"CAM-{uuid.uuid4().hex[:10].upper()}"
+
+            campaign_type = CustomerGenerator._weighted_choice(self.CAMPAIGN_TYPES)
+            target_segment = random.choice(segments)
+
+            # Campaign dates in the past year
+            start_date = fake.date_between(start_date="-1y", end_date="-30d")
+            end_date = start_date + timedelta(days=random.randint(14, 90))
+
+            campaign = {
+                "campaign_id": campaign_id,
+                "campaign_name": name,
+                "campaign_type": campaign_type,
+                "start_date": start_date,
+                "end_date": end_date,
+                "target_segment": target_segment,
+            }
+
+            campaigns.append(campaign)
+            self.id_manager.add_campaign(campaign_id)
+
+        return campaigns
+
+    def generate_campaign_responses(self, campaigns: list[dict], customers: list[dict]) -> list[dict]:
+        """Generate campaign responses (~5% of customers respond to campaigns)."""
+        responses = []
+
+        # 5% of customers respond
+        responding_customers = random.sample(customers, k=int(len(customers) * 0.05))
+
+        for customer in responding_customers:
+            # Each responding customer responds to 1-2 campaigns
+            num_responses = random.choices([1, 2], weights=[0.7, 0.3], k=1)[0]
+            customer_campaigns = random.sample(campaigns, k=min(num_responses, len(campaigns)))
+
+            for campaign in customer_campaigns:
+                response_type = CustomerGenerator._weighted_choice(self.RESPONSE_TYPES)
+
+                # Converted: 30% for purchased, 5% for clicked, 1% for opened, 0% for unsubscribed
+                if response_type == "purchased":
+                    converted = random.random() < 0.30
+                elif response_type == "clicked":
+                    converted = random.random() < 0.05
+                elif response_type == "opened":
+                    converted = random.random() < 0.01
+                else:  # unsubscribed
+                    converted = False
+
+                # Response date: between campaign start and end
+                response_date = fake.date_between(
+                    start_date=campaign["start_date"],
+                    end_date=campaign["end_date"]
+                )
+
+                response = {
+                    "campaign_id": campaign["campaign_id"],
+                    "customer_id": customer["customer_id"],
+                    "response_date": response_date,
+                    "response_type": response_type,
+                    "converted": converted,
+                }
+
+                responses.append(response)
+
+        return responses

@@ -62,6 +62,10 @@ class IDManager:
         if customer_id in self.customer_to_accounts:
             self.customer_to_accounts[customer_id].append(account_id)
 
+    def add_campaign(self, campaign_id: str) -> None:
+        """Add a campaign ID."""
+        self.campaign_ids.append(campaign_id)
+
     def get_stats(self) -> dict[str, Any]:
         """Get statistics about generated IDs."""
         return {

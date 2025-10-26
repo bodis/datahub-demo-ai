@@ -25,32 +25,27 @@ dhub seed clear --confirm
 
 ## What's Generated
 
-### Phase 1-2 (Implemented)
+### Phase 1-3 (Implemented - 60% Complete)
 
-| Database | Tables | Description |
-|----------|--------|-------------|
-| **employees_db** | departments, employees, training_programs | HR data with roles & hierarchy |
-| **customer_db** | customer_profiles | CRM profiles with segments & KYC status |
-| **accounts_db** | customers, accounts, account_relationships, transactions | Customer master + banking accounts + linked accounts + transaction history |
+| Database | Tables | Records @ Scale 1.0 |
+|----------|--------|---------------------|
+| **employees_db** | departments, employees, training_programs | ~180 |
+| **customer_db** | customer_profiles, interactions, satisfaction_surveys, complaints, campaigns, campaign_responses | ~2,300 |
+| **accounts_db** | customers, accounts, account_relationships, transactions | ~16,500 |
 
-### Current Capabilities
+**Key Features:**
+- ✅ **HR**: 12 departments, employees with roles (Loan Officers, Agents, etc.)
+- ✅ **Customers**: Realistic demographics, segments (retail 60%, premium 25%, etc.)
+- ✅ **Accounts**: Multiple types (checking 50%, savings 30%, etc.), 20%+5% have relationships
+- ✅ **Transactions**: 10-20x accounts, 70% spending / 30% income, chronological
+- ✅ **CRM**: 0-5 interactions/customer, 8% complaints, 10-15 campaigns, 5% respond
+- ✅ **Satisfaction**: 30% of interactions surveyed, NPS & 1-5 star ratings
 
-- ✅ 12 Departments (fixed organizational structure)
-- ✅ Employees with roles: Loan Officers, Insurance Agents, Compliance Officers, etc.
-- ✅ Customers with realistic demographics (age 18-85, bell curve distribution)
-- ✅ Customer Profiles with segments (retail 60%, premium 25%, corporate 10%, private 5%)
-- ✅ Bank Accounts with types (checking 50%, savings 30%, money market 15%, CD 5%)
-- ✅ Account Relationships (20% of accounts have 1 link, 5% have 2 links)
-- ✅ Transactions (10-20x account count, 70% spending, 30% income)
-- ✅ Cross-database relationships (customer_id, employee_id, account_id) maintained
+### Not Yet Implemented (Phases 4-6)
 
-### Not Yet Implemented
-
-Phases 3-6 are planned but not yet implemented:
-- Loan Applications, Loans, Collateral
-- Insurance Policies, Claims, Beneficiaries
-- Interactions, Campaigns, Complaints
-- KYC Records, AML Checks, Audit Trails
+- **Loans**: Applications, approvals, collateral, payments
+- **Insurance**: Policies, claims, beneficiaries, coverage
+- **Compliance**: KYC records, AML checks, audit trails
 
 ## Scalability
 
@@ -64,14 +59,13 @@ Controls dataset size while maintaining data quality and relationships.
 
 ### Scale Examples
 
-| Factor | Employees | Customers | Accounts | Relationships | Transactions | Use Case |
-|--------|-----------|-----------|----------|---------------|--------------|----------|
-| 0.05 | 7 | 60 | ~55 | ~14 | ~700 | Quick test |
-| 0.1 | 15 | 120 | ~100 | ~25 | ~1,350 | Development |
-| 0.5 | 75 | 600 | ~550 | ~140 | ~7,000 | Medium demo |
-| **1.0** | **150** | **1,200** | **~1,100** | **~275** | **~14,000** | **Base (requirements)** |
-| 5.0 | 750 | 6,000 | ~5,500 | ~1,400 | ~70,000 | Enterprise |
-| 10.0 | 1,500 | 12,000 | ~11,000 | ~2,750 | ~140,000 | Very large |
+| Factor | Employees | Customers | Accounts | Transactions | Interactions | Total Records | Use Case |
+|--------|-----------|-----------|----------|--------------|--------------|---------------|----------|
+| 0.05 | 7 | 60 | ~55 | ~700 | ~100 | ~1,000 | Quick test |
+| **0.1** | **15** | **120** | **~110** | **~1,400** | **~210** | **~2,000** | **Development** |
+| 0.5 | 75 | 600 | ~550 | ~7,000 | ~1,000 | ~9,500 | Medium demo |
+| 1.0 | 150 | 1,200 | ~1,100 | ~14,000 | ~2,000 | ~19,000 | Base |
+| 5.0 | 750 | 6,000 | ~5,500 | ~70,000 | ~10,000 | ~92,000 | Enterprise |
 
 ### Fixed vs Scalable
 
@@ -95,25 +89,60 @@ dhub seed all --scale 1.0 --customers 500
 dhub seed all --customers 1000 --employees 100
 ```
 
-## Data Relationships
+## Data Relationships & Details
 
-All cross-database foreign keys are maintained:
+**Cross-database links maintained:**
+- `customer_id`: Syncs accounts_db ↔ customer_db
+- `employee_id`: Used in assigned_agent_id, handled_by, processed_by, etc.
+- `account_id`: Links to transactions and relationships
 
-1. **customer_id**: Links `accounts_db.customers` ↔ `customer_db.customer_profiles`
-2. **employee_id**: Referenced as assigned_agent_id, manager_id, etc.
-3. **account_id**: Links customers to their accounts (75% have accounts, 25% multiple)
+### Key Generation Rules
 
-### Verification
+**Accounts (accounts_db)**
+- 75% of customers have accounts, 25% have multiple
+- Account relationships: 20% have 1 link, 5% have 2 links
+- Types: joint_owner, beneficiary, authorized_user, linked_savings
+
+**Transactions (accounts_db)**
+- Volume: 10-20x accounts (randomized)
+- Spending (70%): withdrawals, payments, fees | Income (30%): deposits, salary, interest
+- Amounts: Spending capped at 30% balance, salary $1k-8k
+- 30% manual / 70% automated, chronologically sorted
+
+**Interactions (customer_db)**
+- Each customer: 0-5 interactions (weighted: 20% none, 25% one, decreasing)
+- Channels: phone (30%), email (25%), web (20%), mobile_app (15%), branch (10%)
+- 80% handled by employees, duration varies by channel
+
+**Complaints (customer_db)**
+- 8% of customers file complaints
+- Types: service (35%), fee (25%), product (20%), fraud (10%)
+- Status: 60% resolved, 20% investigating, 15% closed, 5% open
+
+**Campaigns (customer_db)**
+- Fixed 10-15 campaigns per generation
+- Types: email (40%), digital (30%), cross_sell (20%), direct_mail (10%)
+- 5% of customers respond (1-2 campaigns each)
+
+**Satisfaction Surveys (customer_db)**
+- 30% of interactions get surveyed
+- NPS: 0-10 (weighted positive), Satisfaction: 1-5 stars (correlated)
+- 50% leave comments
+
+### Quick Verification Queries
 
 ```bash
-# Check employee-department relationships
-dhub db query "SELECT e.first_name, e.role, d.department_name FROM employees e JOIN departments d ON e.department = d.department_name LIMIT 5" -d employees_db
+# Transaction distribution
+dhub db query "SELECT transaction_type, COUNT(*) FROM transactions GROUP BY transaction_type" -d accounts_db
 
-# Check customer-account relationships
-dhub db query "SELECT c.first_name, a.account_type, a.balance FROM customers c JOIN accounts a ON c.customer_id = a.customer_id LIMIT 5" -d accounts_db
+# Interaction channels
+dhub db query "SELECT channel, COUNT(*) FROM interactions GROUP BY channel" -d customer_db
 
-# Check assigned agents
-dhub db query "SELECT customer_id, full_name, assigned_agent_id FROM customer_profiles WHERE assigned_agent_id IS NOT NULL LIMIT 5" -d customer_db
+# Satisfaction metrics
+dhub db query "SELECT ROUND(AVG(nps_score), 2) as avg_nps, ROUND(AVG(satisfaction_rating), 2) as avg_rating FROM satisfaction_surveys" -d customer_db
+
+# Campaign performance
+dhub db query "SELECT response_type, COUNT(*), SUM(CASE WHEN converted THEN 1 ELSE 0 END) as conversions FROM campaign_responses GROUP BY response_type" -d customer_db
 ```
 
 ## Usage Tips
@@ -125,24 +154,31 @@ dhub db query "SELECT customer_id, full_name, assigned_agent_id FROM customer_pr
 
 ## Performance
 
-| Scale | Total Records | Generation Time | Memory |
-|-------|---------------|-----------------|--------|
-| 0.1 | ~250 | ~8 sec | ~100 MB |
-| 1.0 | ~2,500 | ~60 sec | ~500 MB |
-| 5.0 | ~12,500 | ~5 min | ~2 GB |
+| Scale | Total Records | Time | Notes |
+|-------|---------------|------|-------|
+| 0.1 | ~2,000 | ~12s | Quick dev testing |
+| 1.0 | ~19,000 | ~2min | Base requirements |
+| 5.0 | ~95,000 | ~10min | Large dataset |
 
-## Data Quality
+Transactions inserted in batches of 1,000 for efficiency.
 
-The generator ensures:
-- ✅ Realistic distributions (segments, roles, account types)
-- ✅ Valid foreign keys across databases
-- ✅ Date consistency (hire_date < termination_date, etc.)
-- ✅ Appropriate value ranges (balances, salaries)
+## Data Quality Guarantees
+
+- ✅ Realistic distributions & weighted random selections
+- ✅ Valid foreign keys across all databases
+- ✅ Date/time consistency (no future dates, proper sequences)
+- ✅ Appropriate value ranges (balances, salaries, NPS scores)
 - ✅ No duplicates on unique constraints
-- ✅ Proper manager hierarchy (no circular references)
+- ✅ Proper hierarchies (managers, relationships)
+- ✅ Chronological ordering where applicable
 
-## Future Enhancements
+## Roadmap
 
-When Phases 3-6 are implemented, total records at scale 1.0 will be:
-- Current: ~2,500 records
-- Full implementation: ~35,000+ records (with transactions, loans, insurance, compliance data)
+**Current (Phase 1-3):** ~19,000 records @ scale 1.0 (~60% complete)
+
+**Future (Phases 4-6):**
+- Loans: applications, approvals, payments, collateral
+- Insurance: policies, claims, beneficiaries
+- Compliance: KYC, AML checks, audit trails
+
+**Target:** ~50,000+ records @ scale 1.0 when fully implemented

@@ -5,7 +5,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
 from dhub.config import config
-from dhub.data_generators.customers import AccountGenerator, CustomerGenerator
+from dhub.data_generators.customers import AccountGenerator, CRMGenerator, CustomerGenerator
 from dhub.data_generators.employees import EmployeeGenerator
 from dhub.data_generators.id_manager import IDManager
 from dhub.db import get_db_connection
@@ -88,6 +88,13 @@ class DataOrchestrator:
 
             task = progress.add_task("Generating accounts...", total=None)
             accounts_data = self._generate_accounts(customers_data["master"])
+            progress.remove_task(task)
+
+            # Phase 3: CRM Data
+            console.print("\n[bold]Phase 3: CRM & Customer Engagement[/bold]")
+
+            task = progress.add_task("Generating CRM data...", total=None)
+            crm_data = self._generate_crm(customers_data["master"])
             progress.remove_task(task)
 
         # Show summary
@@ -264,6 +271,118 @@ class DataOrchestrator:
 
         return {"accounts": accounts, "relationships": relationships, "transactions": transactions}
 
+    def _generate_crm(self, customers: list[dict]) -> dict:
+        """Generate CRM data for customer_db."""
+        crm_gen = CRMGenerator(self.id_manager, self.scale_factor)
+
+        # Generate campaigns first (fixed, not customer-dependent)
+        campaigns = crm_gen.generate_campaigns()
+        console.print(f"  [green]✓[/green] Generated {len(campaigns)} marketing campaigns")
+
+        # Insert campaigns
+        with get_db_connection("customer_db") as conn:
+            with conn.cursor() as cur:
+                cur.executemany("""
+                    INSERT INTO campaigns (
+                        campaign_id, campaign_name, campaign_type, start_date, end_date, target_segment
+                    )
+                    VALUES (
+                        %(campaign_id)s, %(campaign_name)s, %(campaign_type)s,
+                        %(start_date)s, %(end_date)s, %(target_segment)s
+                    )
+                """, campaigns)
+                conn.commit()
+
+        # Generate interactions
+        interactions = crm_gen.generate_interactions(customers)
+        console.print(f"  [green]✓[/green] Generated {len(interactions)} customer interactions")
+
+        # Insert interactions
+        if interactions:
+            with get_db_connection("customer_db") as conn:
+                with conn.cursor() as cur:
+                    cur.executemany("""
+                        INSERT INTO interactions (
+                            interaction_id, customer_id, interaction_type, channel,
+                            interaction_date, duration_minutes, notes, handled_by, outcome
+                        )
+                        VALUES (
+                            %(interaction_id)s, %(customer_id)s, %(interaction_type)s,
+                            %(channel)s, %(interaction_date)s, %(duration_minutes)s,
+                            %(notes)s, %(handled_by)s, %(outcome)s
+                        )
+                    """, interactions)
+                    conn.commit()
+
+        # Generate satisfaction surveys
+        surveys = crm_gen.generate_satisfaction_surveys(interactions, customers)
+        console.print(f"  [green]✓[/green] Generated {len(surveys)} satisfaction surveys")
+
+        # Insert surveys
+        if surveys:
+            with get_db_connection("customer_db") as conn:
+                with conn.cursor() as cur:
+                    cur.executemany("""
+                        INSERT INTO satisfaction_surveys (
+                            customer_id, interaction_id, nps_score, satisfaction_rating,
+                            survey_date, comments
+                        )
+                        VALUES (
+                            %(customer_id)s, %(interaction_id)s, %(nps_score)s,
+                            %(satisfaction_rating)s, %(survey_date)s, %(comments)s
+                        )
+                    """, surveys)
+                    conn.commit()
+
+        # Generate complaints
+        complaints = crm_gen.generate_complaints(customers)
+        console.print(f"  [green]✓[/green] Generated {len(complaints)} customer complaints")
+
+        # Insert complaints
+        if complaints:
+            with get_db_connection("customer_db") as conn:
+                with conn.cursor() as cur:
+                    cur.executemany("""
+                        INSERT INTO complaints (
+                            complaint_id, customer_id, complaint_type, description,
+                            status, priority, filed_date, resolved_date,
+                            resolution_time_hours, assigned_to
+                        )
+                        VALUES (
+                            %(complaint_id)s, %(customer_id)s, %(complaint_type)s,
+                            %(description)s, %(status)s, %(priority)s, %(filed_date)s,
+                            %(resolved_date)s, %(resolution_time_hours)s, %(assigned_to)s
+                        )
+                    """, complaints)
+                    conn.commit()
+
+        # Generate campaign responses
+        responses = crm_gen.generate_campaign_responses(campaigns, customers)
+        console.print(f"  [green]✓[/green] Generated {len(responses)} campaign responses")
+
+        # Insert responses
+        if responses:
+            with get_db_connection("customer_db") as conn:
+                with conn.cursor() as cur:
+                    cur.executemany("""
+                        INSERT INTO campaign_responses (
+                            campaign_id, customer_id, response_date, response_type, converted
+                        )
+                        VALUES (
+                            %(campaign_id)s, %(customer_id)s, %(response_date)s,
+                            %(response_type)s, %(converted)s
+                        )
+                    """, responses)
+                    conn.commit()
+
+        return {
+            "campaigns": campaigns,
+            "interactions": interactions,
+            "surveys": surveys,
+            "complaints": complaints,
+            "responses": responses,
+        }
+
     def _show_summary(self) -> None:
         """Show generation summary."""
         console.print("\n[bold green]✓ Data Generation Complete![/bold green]\n")
@@ -291,7 +410,7 @@ class DataOrchestrator:
         """Show record counts per database."""
         databases = {
             "employees_db": ["departments", "employees", "training_programs"],
-            "customer_db": ["customer_profiles"],
+            "customer_db": ["customer_profiles", "interactions", "satisfaction_surveys", "complaints", "campaigns", "campaign_responses"],
             "accounts_db": ["customers", "accounts", "account_relationships", "transactions"],
         }
 
