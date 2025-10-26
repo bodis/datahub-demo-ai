@@ -1394,3 +1394,391 @@ def list_tables_command(
         if not yaml_format:
             console.print(f"[red]Error querying DataHub: {e}[/red]")
         raise typer.Exit(1)
+
+
+@app.command("update-column-metadata")
+def update_column_metadata_command(
+    yaml_file: Path = typer.Argument(
+        ...,
+        help="Path to YAML file with column metadata updates"
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Show what would be updated without actually updating"
+    ),
+):
+    """Update column descriptions and structured properties from a YAML file.
+
+    The YAML file should have the following structure:
+
+    \b
+    tables:
+      - database: loans_db
+        schema: public
+        table: loans
+        columns:
+          - name: customer_id
+            description: "Customer who received the loan"
+            structured_properties:
+              fk_target_table: "accounts_db.public.customers"
+              fk_target_column: "customer_id"
+              fk_cross_database: "true"
+              fk_relationship_description: "Links loan to customer account"
+
+    Examples:
+        # Update metadata from a YAML file
+        dhub datahub update-column-metadata metadata.yaml
+
+        # Preview changes without applying
+        dhub datahub update-column-metadata metadata.yaml --dry-run
+    """
+    console.print("[bold blue]Update Column Metadata from YAML[/bold blue]\n")
+
+    # Check if file exists
+    if not yaml_file.exists():
+        console.print(f"[red]Error: YAML file not found: {yaml_file}[/red]")
+        raise typer.Exit(1)
+
+    # Load YAML file
+    try:
+        with open(yaml_file, 'r') as f:
+            config_data = yaml.safe_load(f)
+    except Exception as e:
+        console.print(f"[red]Error reading YAML file: {e}[/red]")
+        raise typer.Exit(1)
+
+    # Validate YAML structure
+    if not config_data or "tables" not in config_data:
+        console.print("[red]Error: YAML file must have a 'tables' key with table definitions[/red]")
+        raise typer.Exit(1)
+
+    tables = config_data["tables"]
+    if not isinstance(tables, list):
+        console.print("[red]Error: 'tables' must be a list[/red]")
+        raise typer.Exit(1)
+
+    console.print(f"[cyan]YAML file:[/cyan] {yaml_file}")
+    console.print(f"[cyan]Tables to update:[/cyan] {len(tables)}")
+    console.print(f"[cyan]Mode:[/cyan] {'Dry run (no changes)' if dry_run else 'Live update'}\n")
+
+    # Connect to DataHub
+    try:
+        emitter = get_datahub_emitter()
+        gms_url = config.get_datahub_url()
+        console.print(f"[green]Connected to DataHub: {gms_url}[/green]\n")
+    except Exception as e:
+        console.print(f"[red]Failed to connect to DataHub: {e}[/red]")
+        raise typer.Exit(1)
+
+    from datahub.metadata.schema_classes import (
+        EditableSchemaMetadataClass,
+        EditableSchemaFieldInfoClass,
+        StructuredPropertiesClass,
+        StructuredPropertyValueAssignmentClass,
+    )
+    from datahub.emitter.mcp import MetadataChangeProposalWrapper
+
+    total_updated = 0
+    total_failed = 0
+
+    # Process each table
+    for table_def in tables:
+        database = table_def.get("database")
+        schema = table_def.get("schema", "public")
+        table = table_def.get("table")
+        columns = table_def.get("columns", [])
+
+        if not database or not table:
+            console.print(f"[yellow]Warning: Skipping table with missing database or table name[/yellow]")
+            continue
+
+        # Construct dataset URN
+        dataset_name = f"{database}.{schema}.{table}"
+        dataset_urn = f"urn:li:dataset:(urn:li:dataPlatform:postgres,{dataset_name},PROD)"
+
+        console.print(f"[bold cyan]{'─' * 80}[/bold cyan]")
+        console.print(f"[bold]{database}.{schema}.{table}[/bold]")
+        console.print(f"[dim]URN: {dataset_urn}[/dim]\n")
+
+        if not columns:
+            console.print("  [yellow]No columns to update[/yellow]\n")
+            continue
+
+        # Process each column
+        for col_def in columns:
+            col_name = col_def.get("name")
+            description = col_def.get("description")
+            structured_props = col_def.get("structured_properties", {})
+
+            if not col_name:
+                console.print("  [yellow]Warning: Skipping column with no name[/yellow]")
+                continue
+
+            console.print(f"  [cyan]{col_name}:[/cyan]")
+
+            try:
+                # Show what will be updated
+                if description:
+                    console.print(f"    [dim]Description:[/dim] {description}")
+
+                if structured_props:
+                    console.print(f"    [dim]Structured Properties:[/dim]")
+                    for prop_name, prop_value in structured_props.items():
+                        console.print(f"      [green]{prop_name}:[/green] {prop_value}")
+
+                if dry_run:
+                    console.print(f"    [yellow](dry run - not updating)[/yellow]")
+                    total_updated += 1
+                    continue
+
+                # Update description if provided
+                if description:
+                    try:
+                        # Create editable schema field info
+                        editable_field_info = EditableSchemaFieldInfoClass(
+                            fieldPath=col_name,
+                            description=description,
+                        )
+
+                        # Create editable schema metadata
+                        editable_schema_metadata = EditableSchemaMetadataClass(
+                            editableSchemaFieldInfo=[editable_field_info]
+                        )
+
+                        # Create MCP to update field description
+                        mcp = MetadataChangeProposalWrapper(
+                            entityType="dataset",
+                            changeType=ChangeTypeClass.UPSERT,
+                            entityUrn=dataset_urn,
+                            aspectName="editableSchemaMetadata",
+                            aspect=editable_schema_metadata,
+                        )
+
+                        emitter.emit_mcp(mcp)
+                        console.print(f"    [green]✓ Description updated[/green]")
+                    except Exception as e:
+                        console.print(f"    [red]✗ Failed to update description: {e}[/red]")
+                        total_failed += 1
+                        continue
+
+                # Update structured properties if provided
+                if structured_props:
+                    try:
+                        # Build structured property URNs and values
+                        properties = []
+                        for prop_name, prop_value in structured_props.items():
+                            prop_urn = f"urn:li:structuredProperty:{prop_name}"
+                            prop_assignment = StructuredPropertyValueAssignmentClass(
+                                propertyUrn=prop_urn,
+                                values=[prop_value]
+                            )
+                            properties.append(prop_assignment)
+
+                        # Create the structured properties aspect
+                        structured_properties_aspect = StructuredPropertiesClass(
+                            properties=properties
+                        )
+
+                        # Create field URN (schemaField URN)
+                        field_urn = f"urn:li:schemaField:({dataset_urn},{col_name})"
+
+                        # Create MCP to update structured properties on the field
+                        mcp = MetadataChangeProposalWrapper(
+                            entityType="schemaField",
+                            changeType=ChangeTypeClass.UPSERT,
+                            entityUrn=field_urn,
+                            aspectName="structuredProperties",
+                            aspect=structured_properties_aspect,
+                        )
+
+                        emitter.emit_mcp(mcp)
+                        console.print(f"    [green]✓ Structured properties updated[/green]")
+                    except Exception as e:
+                        console.print(f"    [red]✗ Failed to update structured properties: {e}[/red]")
+                        total_failed += 1
+                        continue
+
+                total_updated += 1
+
+            except Exception as e:
+                console.print(f"    [red]✗ Error: {e}[/red]")
+                total_failed += 1
+
+        console.print()
+
+    # Summary
+    console.print(f"[bold]{'─' * 80}[/bold]")
+    console.print("[bold]Update Summary[/bold]\n")
+
+    table = Table(show_header=False)
+    table.add_row("Total updated:", f"[green]{total_updated}[/green]")
+    table.add_row("Total failed:", f"[red]{total_failed}[/red]" if total_failed > 0 else "0")
+    console.print(table)
+
+    if dry_run:
+        console.print("\n[yellow]This was a dry run. Use without --dry-run to apply changes.[/yellow]")
+    elif total_updated > 0:
+        console.print(f"\n[dim]View in DataHub UI: {config.DATAHUB_FRONTEND_URL}/datasets[/dim]")
+
+
+@app.command("register-structured-properties")
+def register_structured_properties_command(
+    properties_file: Optional[Path] = typer.Option(
+        None,
+        "--file",
+        "-f",
+        help="Path to structured properties YAML file (default: databases/datahub/structured-properties.yaml)"
+    ),
+):
+    """Register structured property definitions in DataHub.
+
+    This command reads a YAML file with structured property definitions and
+    creates them in DataHub. These properties can then be assigned to schema fields.
+
+    The YAML file should follow DataHub's structured properties format.
+
+    Examples:
+        # Register properties from default file
+        dhub datahub register-structured-properties
+
+        # Register from custom file
+        dhub datahub register-structured-properties --file my-properties.yaml
+    """
+    console.print("[bold blue]Register Structured Properties in DataHub[/bold blue]\n")
+
+    # Use default file if not specified
+    if not properties_file:
+        properties_file = Path("databases/datahub/structured-properties.yaml")
+
+    # Check if file exists
+    if not properties_file.exists():
+        console.print(f"[red]Error: Properties file not found: {properties_file}[/red]")
+        console.print("[dim]Hint: Create a structured properties YAML file with property definitions[/dim]")
+        raise typer.Exit(1)
+
+    # Load YAML file
+    try:
+        with open(properties_file, 'r') as f:
+            properties_list = yaml.safe_load(f)
+    except Exception as e:
+        console.print(f"[red]Error reading YAML file: {e}[/red]")
+        raise typer.Exit(1)
+
+    if not properties_list or not isinstance(properties_list, list):
+        console.print("[red]Error: YAML file must contain a list of property definitions[/red]")
+        raise typer.Exit(1)
+
+    console.print(f"[cyan]Properties file:[/cyan] {properties_file}")
+    console.print(f"[cyan]Properties to register:[/cyan] {len(properties_list)}\n")
+
+    # Connect to DataHub
+    try:
+        emitter = get_datahub_emitter()
+        gms_url = config.get_datahub_url()
+        console.print(f"[green]Connected to DataHub: {gms_url}[/green]\n")
+    except Exception as e:
+        console.print(f"[red]Failed to connect to DataHub: {e}[/red]")
+        raise typer.Exit(1)
+
+    from datahub.metadata.schema_classes import (
+        PropertyCardinalityClass,
+        StructuredPropertyDefinitionClass,
+        PropertyValueClass,
+    )
+    from datahub.emitter.mcp import MetadataChangeProposalWrapper
+
+    total_registered = 0
+    total_failed = 0
+
+    # Process each property definition
+    for prop_def in properties_list:
+        prop_id = prop_def.get("id") or prop_def.get("qualified_name")
+        display_name = prop_def.get("display_name", prop_id)
+        description = prop_def.get("description", "")
+        prop_type = prop_def.get("type", "string")
+        cardinality = prop_def.get("cardinality", "SINGLE")
+        entity_types = prop_def.get("entity_types", [])
+        allowed_values = prop_def.get("allowed_values", [])
+
+        if not prop_id:
+            console.print(f"[yellow]Warning: Skipping property with no id/qualified_name[/yellow]")
+            continue
+
+        console.print(f"[cyan]{prop_id}[/cyan]")
+        console.print(f"  [dim]Display Name:[/dim] {display_name}")
+        console.print(f"  [dim]Type:[/dim] {prop_type}")
+        console.print(f"  [dim]Cardinality:[/dim] {cardinality}")
+
+        try:
+            # Map cardinality string to enum
+            cardinality_map = {
+                "SINGLE": PropertyCardinalityClass.SINGLE,
+                "MULTIPLE": PropertyCardinalityClass.MULTIPLE,
+            }
+            cardinality_enum = cardinality_map.get(cardinality.upper(), PropertyCardinalityClass.SINGLE)
+
+            # Map type string to DataHub type URN
+            type_map = {
+                "string": "urn:li:dataType:datahub.string",
+                "number": "urn:li:dataType:datahub.number",
+                "date": "urn:li:dataType:datahub.date",
+                "urn": "urn:li:dataType:datahub.urn",
+            }
+            value_type_urn = type_map.get(prop_type.lower(), "urn:li:dataType:datahub.string")
+
+            # Build allowed values if present
+            allowed_value_objs = None
+            if allowed_values:
+                allowed_value_objs = [
+                    PropertyValueClass(
+                        value=av.get("value"),
+                        description=av.get("description", "")
+                    )
+                    for av in allowed_values
+                ]
+
+            # Create structured property definition
+            structured_prop_def = StructuredPropertyDefinitionClass(
+                qualifiedName=prop_id,
+                displayName=display_name,
+                description=description,
+                valueType=value_type_urn,
+                cardinality=cardinality_enum,
+                entityTypes=entity_types,
+                allowedValues=allowed_value_objs,
+            )
+
+            # Create property URN
+            property_urn = f"urn:li:structuredProperty:{prop_id}"
+
+            # Create MCP
+            mcp = MetadataChangeProposalWrapper(
+                entityType="structuredProperty",
+                changeType=ChangeTypeClass.UPSERT,
+                entityUrn=property_urn,
+                aspectName="propertyDefinition",
+                aspect=structured_prop_def,
+            )
+
+            emitter.emit_mcp(mcp)
+
+            console.print(f"  [green]✓ Registered[/green]\n")
+            total_registered += 1
+
+        except Exception as e:
+            console.print(f"  [red]✗ Failed: {e}[/red]\n")
+            total_failed += 1
+
+    # Summary
+    console.print(f"[bold]{'─' * 80}[/bold]")
+    console.print("[bold]Registration Summary[/bold]\n")
+
+    table = Table(show_header=False)
+    table.add_row("Total registered:", f"[green]{total_registered}[/green]")
+    table.add_row("Total failed:", f"[red]{total_failed}[/red]" if total_failed > 0 else "0")
+    console.print(table)
+
+    if total_registered > 0:
+        console.print(f"\n[green]✓ Structured properties are now available for use[/green]")
+        console.print("[dim]You can now assign these properties to schema fields using update-column-metadata[/dim]")

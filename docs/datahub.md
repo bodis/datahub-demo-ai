@@ -1,14 +1,20 @@
-# DataHub Metadata Import & Management
+# DataHub Commands
 
-The `dhub datahub` command group provides tools to import and manage DataHub metadata (domains and glossaries) from CSV files.
+The `dhub datahub` command group provides comprehensive DataHub integration:
 
-## Overview
+- **Ingestion** - Import database metadata into DataHub (see [ingestion.md](ingestion.md))
+- **Structured Properties** - Document cross-database relationships (see [structured_properties.md](structured_properties.md))
+- **Domains & Glossaries** - Import business metadata from CSV (this guide)
+- **List Tables** - View and export metadata with CLI
 
-This functionality allows you to:
-- **Import domains** - Create hierarchical domain structures in DataHub
-- **Import glossaries** - Create business glossary terms with parent-child relationships
-- **Associate glossaries with domains** - Link glossary terms to specific domains
-- **Clear metadata** - Remove domains and glossaries from DataHub
+## Domains & Glossaries
+
+Import and manage business metadata from CSV files:
+
+- **Import domains** - Create hierarchical domain structures
+- **Import glossaries** - Create business glossary terms
+- **Associate glossaries with domains** - Link terms to domains
+- **Clear metadata** - Remove domains and glossaries
 
 All metadata is defined in CSV files located in `databases/imports/<subdirectory>/`.
 

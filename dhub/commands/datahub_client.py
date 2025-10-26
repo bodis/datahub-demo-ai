@@ -197,6 +197,66 @@ def extract_tags(dataset: Dict) -> List[str]:
     return tags
 
 
+def fetch_structured_properties_for_field(dataset_urn: str, field_path: str, gms_url: str) -> Dict:
+    """Fetch structured properties for a specific field using DataHub SDK.
+
+    Args:
+        dataset_urn: Dataset URN
+        field_path: Field path (column name)
+        gms_url: DataHub GMS server URL
+
+    Returns:
+        Dictionary of structured properties or empty dict if not available
+    """
+    try:
+        from datahub.ingestion.graph.client import DatahubClientConfig, DataHubGraph
+        from datahub.metadata.schema_classes import StructuredPropertiesClass
+
+        # Create GraphQL client
+        graph = DataHubGraph(DatahubClientConfig(server=gms_url))
+
+        # Construct field URN
+        field_urn = f"urn:li:schemaField:({dataset_urn},{field_path})"
+
+        # Get structured properties aspect
+        result = graph.get_aspect(
+            entity_urn=field_urn,
+            aspect_type=StructuredPropertiesClass,
+        )
+
+        if not result or not result.properties:
+            return {}
+
+        # Parse structured properties
+        structured_props = {}
+        for prop in result.properties:
+            prop_urn = prop.propertyUrn
+            prop_name = prop_urn.split(":")[-1] if prop_urn else ""
+
+            values = prop.values if hasattr(prop, 'values') and prop.values else []
+            if values and len(values) > 0:
+                # Values can be either strings directly or objects
+                value_list = []
+                for v in values:
+                    if isinstance(v, str):
+                        value_list.append(v)
+                    elif hasattr(v, 'string') and v.string:
+                        value_list.append(v.string)
+                    elif hasattr(v, 'value'):
+                        value_list.append(v.value)
+
+                if len(value_list) == 1:
+                    structured_props[prop_name] = value_list[0]
+                elif len(value_list) > 1:
+                    structured_props[prop_name] = value_list
+
+        return structured_props
+
+    except Exception as e:
+        # Silently return empty dict if there's an error
+        return {}
+
+
 def fetch_dataset_details(urn: str, headers: Dict[str, str], gms_url: str) -> Dict:
     """Fetch detailed information about a dataset including columns, stats, and relationships.
 
@@ -250,6 +310,14 @@ def fetch_dataset_details(urn: str, headers: Dict[str, str], gms_url: str) -> Di
         details["columns"] = extract_schema_metadata(dataset)
         details["row_count"], details["column_count"] = extract_dataset_profiles(dataset, details["columns"])
         details["tags"] = extract_tags(dataset)
+
+        # Try to fetch structured properties for each column
+        for col in details["columns"]:
+            field_path = col.get("name")
+            if field_path:
+                structured_props = fetch_structured_properties_for_field(urn, field_path, gms_url)
+                if structured_props:
+                    col["structured_properties"] = structured_props
 
     except Exception as e:
         # Return partial details if something fails

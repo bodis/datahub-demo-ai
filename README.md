@@ -245,28 +245,40 @@ See [docs/data_generation.md](docs/data_generation.md) for details.
 
 ## DataHub Metadata Management
 
+### Import Domains and Glossaries
+
 Import and manage DataHub metadata (domains, glossaries) from CSV files:
 
 ```bash
-# Import domains and glossaries from all subdirectories
-dhub datahub import-all
-
-# Import from specific subdirectory
+# Import domains and glossaries
 dhub datahub import-all --subdirectory bank
 
-# Import only domains or glossaries
-dhub datahub import-domains --subdirectory bank
-dhub datahub import-glossaries --subdirectory bank
-
-# Clear metadata (requires confirmation)
-dhub datahub clear --subdirectory bank --confirm
+# List tables with metadata
+dhub datahub list-tables --database loans_db --with-columns
 ```
 
-CSV files should be placed in `databases/imports/<subdirectory>/`:
-- `domains.csv` - Domain hierarchy definitions
-- `glossaries.csv` - Glossary terms with optional domain associations
+### Cross-Database Foreign Keys
 
-See [docs/datahub.md](docs/datahub.md) for details.
+Document relationships between databases using structured properties:
+
+```bash
+# Register property definitions
+dhub datahub register-structured-properties
+
+# Apply metadata from YAML
+dhub datahub update-column-metadata examples/dataconnections.yaml
+
+# View in CLI or export to YAML
+dhub datahub list-tables --database loans_db --with-columns --yaml
+```
+
+## Documentation
+
+- **[Development Guide](docs/development.md)** - Project structure, CLI commands, code patterns
+- **[Data Generation](docs/data_generation.md)** - Demo data generation system
+- **[DataHub Ingestion](docs/ingestion.md)** - Database metadata ingestion
+- **[DataHub Commands](docs/datahub.md)** - Domains & glossaries management
+- **[Structured Properties](docs/structured_properties.md)** - Cross-database foreign keys
 
 ## Use Cases & Demonstrations
 

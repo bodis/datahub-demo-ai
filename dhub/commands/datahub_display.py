@@ -71,28 +71,45 @@ def display_columns_table(console: Console, columns: List[Dict]):
     columns_table.add_column("Type", style="yellow", width=18)
     columns_table.add_column("Null", style="dim", width=4)
     columns_table.add_column("FK", style="magenta", width=30)
-    columns_table.add_column("Description", style="white", width=35)
+    columns_table.add_column("Structured Props", style="green", width=15)
+    columns_table.add_column("Description", style="white", width=30)
 
     for col in columns:
         nullable_str = "Yes" if col.get("nullable", True) else "No"
         desc = col.get("description", "") or ""
-        if len(desc) > 35:
-            desc = desc[:32] + "..."
+        if len(desc) > 30:
+            desc = desc[:27] + "..."
 
         # Format foreign key reference
         fk_ref = ""
         if col.get("foreign_key"):
             fk_ref = format_foreign_key_reference(col["foreign_key"])
 
+        # Format structured properties count
+        struct_props_str = ""
+        if col.get("structured_properties"):
+            count = len(col["structured_properties"])
+            struct_props_str = f"{count} prop{'s' if count != 1 else ''}"
+
         columns_table.add_row(
             col["name"] or "",
             col["type"] or "unknown",
             nullable_str,
             fk_ref,
+            struct_props_str,
             desc
         )
 
     console.print(columns_table)
+
+    # Show detailed structured properties for columns that have them
+    cols_with_props = [c for c in columns if c.get("structured_properties")]
+    if cols_with_props:
+        console.print(f"\n[bold]Structured Properties:[/bold]")
+        for col in cols_with_props:
+            console.print(f"\n  [cyan]{col['name']}:[/cyan]")
+            for prop_name, prop_value in col["structured_properties"].items():
+                console.print(f"    [dim]{prop_name}:[/dim] {prop_value}")
 
 
 def display_column_statistics(console: Console, columns: List[Dict]):
@@ -217,6 +234,8 @@ def build_yaml_output(tables_data: List[Dict], with_columns: bool) -> Dict:
                         col_data["description"] = col["description"]
                     if col.get("foreign_key"):
                         col_data["foreign_key"] = col["foreign_key"]
+                    if col.get("structured_properties"):
+                        col_data["structured_properties"] = col["structured_properties"]
                     if col.get("stats"):
                         # Clean up None values from stats
                         stats = {k: v for k, v in col["stats"].items() if v is not None}

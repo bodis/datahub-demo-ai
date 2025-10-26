@@ -1,0 +1,310 @@
+# Cross-Database Foreign Key Relationships
+# This file documents all cross-database foreign key relationships
+# that are not enforced by database constraints but exist logically.
+#
+# Usage:
+# 1. Register structured properties:
+#    uv run dhub datahub register-structured-properties
+#
+# 2. Apply cross-database FK metadata:
+#    uv run dhub datahub update-column-metadata examples/dataconnections.yaml
+#
+# 3. View results:
+#    uv run dhub datahub list-tables --database loans_db --with-columns
+
+tables:
+  # ============================================================================
+  # LOANS_DB -> Cross-Database References
+  # ============================================================================
+
+  - database: loans_db
+    schema: public
+    table: loan_applications
+    columns:
+      - name: customer_id
+        description: "Customer applying for the loan - references master customer record"
+        structured_properties:
+          fk_target_table: "accounts_db.public.customers"
+          fk_target_column: "customer_id"
+          fk_cross_database: "true"
+          fk_relationship_description: "Links loan application to customer master record in accounts database"
+
+      - name: officer_id
+        description: "Loan officer handling the application"
+        structured_properties:
+          fk_target_table: "employees_db.public.employees"
+          fk_target_column: "employee_id"
+          fk_cross_database: "true"
+          fk_relationship_description: "Links to loan officer employee record"
+
+  - database: loans_db
+    schema: public
+    table: loans
+    columns:
+      - name: customer_id
+        description: "Customer who received the loan - references master customer record"
+        structured_properties:
+          fk_target_table: "accounts_db.public.customers"
+          fk_target_column: "customer_id"
+          fk_cross_database: "true"
+          fk_relationship_description: "Links loan to customer master record in accounts database"
+
+      - name: linked_account_id
+        description: "Bank account for disbursement and repayment"
+        structured_properties:
+          fk_target_table: "accounts_db.public.accounts"
+          fk_target_column: "account_id"
+          fk_cross_database: "true"
+          fk_relationship_description: "Links to bank account used for loan disbursement and repayments"
+
+      - name: approved_by
+        description: "Employee who approved the loan"
+        structured_properties:
+          fk_target_table: "employees_db.public.employees"
+          fk_target_column: "employee_id"
+          fk_cross_database: "true"
+          fk_relationship_description: "Links to approving officer employee record"
+
+  - database: loans_db
+    schema: public
+    table: risk_assessments
+    columns:
+      - name: assessed_by
+        description: "Employee or system that performed assessment"
+        structured_properties:
+          fk_target_table: "employees_db.public.employees"
+          fk_target_column: "employee_id"
+          fk_cross_database: "true"
+          fk_relationship_description: "Links to risk assessment officer employee record"
+
+  # ============================================================================
+  # INSURANCE_DB -> Cross-Database References
+  # ============================================================================
+
+  - database: insurance_db
+    schema: public
+    table: policies
+    columns:
+      - name: customer_id
+        description: "Customer who owns the policy - references master customer record"
+        structured_properties:
+          fk_target_table: "accounts_db.public.customers"
+          fk_target_column: "customer_id"
+          fk_cross_database: "true"
+          fk_relationship_description: "Links insurance policy to customer master record in accounts database"
+
+      - name: linked_account_id
+        description: "Bank account used for premium payments"
+        structured_properties:
+          fk_target_table: "accounts_db.public.accounts"
+          fk_target_column: "account_id"
+          fk_cross_database: "true"
+          fk_relationship_description: "Links to bank account used for premium deductions"
+
+      - name: agent_id
+        description: "Employee who sold the policy"
+        structured_properties:
+          fk_target_table: "employees_db.public.employees"
+          fk_target_column: "employee_id"
+          fk_cross_database: "true"
+          fk_relationship_description: "Links to insurance agent employee record"
+
+  - database: insurance_db
+    schema: public
+    table: claims
+    columns:
+      - name: processed_by
+        description: "Employee who processed the claim"
+        structured_properties:
+          fk_target_table: "employees_db.public.employees"
+          fk_target_column: "employee_id"
+          fk_cross_database: "true"
+          fk_relationship_description: "Links to claims processor employee record"
+
+  - database: insurance_db
+    schema: public
+    table: policy_events
+    columns:
+      - name: performed_by
+        description: "Employee who performed the action"
+        structured_properties:
+          fk_target_table: "employees_db.public.employees"
+          fk_target_column: "employee_id"
+          fk_cross_database: "true"
+          fk_relationship_description: "Links to employee who performed policy event"
+
+  - database: insurance_db
+    schema: public
+    table: premium_payments
+    columns:
+      - name: from_account_id
+        description: "Bank account from which payment was made"
+        structured_properties:
+          fk_target_table: "accounts_db.public.accounts"
+          fk_target_column: "account_id"
+          fk_cross_database: "true"
+          fk_relationship_description: "Links to source bank account for premium payment"
+
+  # ============================================================================
+  # CUSTOMER_DB -> Cross-Database References
+  # ============================================================================
+
+  - database: customer_db
+    schema: public
+    table: customer_profiles
+    columns:
+      - name: assigned_agent_id
+        description: "Employee ID of the assigned relationship manager"
+        structured_properties:
+          fk_target_table: "employees_db.public.employees"
+          fk_target_column: "employee_id"
+          fk_cross_database: "true"
+          fk_relationship_description: "Links to relationship manager employee record"
+
+  - database: customer_db
+    schema: public
+    table: interactions
+    columns:
+      - name: handled_by
+        description: "Employee ID who handled the interaction"
+        structured_properties:
+          fk_target_table: "employees_db.public.employees"
+          fk_target_column: "employee_id"
+          fk_cross_database: "true"
+          fk_relationship_description: "Links to customer service employee who handled the interaction"
+
+  - database: customer_db
+    schema: public
+    table: complaints
+    columns:
+      - name: assigned_to
+        description: "Employee ID responsible for resolution"
+        structured_properties:
+          fk_target_table: "employees_db.public.employees"
+          fk_target_column: "employee_id"
+          fk_cross_database: "true"
+          fk_relationship_description: "Links to employee assigned to resolve complaint"
+
+  # ============================================================================
+  # COMPLIANCE_DB -> Cross-Database References
+  # ============================================================================
+
+  - database: compliance_db
+    schema: public
+    table: kyc_records
+    columns:
+      - name: customer_id
+        description: "Customer being verified - references master customer record"
+        structured_properties:
+          fk_target_table: "accounts_db.public.customers"
+          fk_target_column: "customer_id"
+          fk_cross_database: "true"
+          fk_relationship_description: "Links KYC record to customer master record in accounts database"
+
+      - name: verified_by
+        description: "Employee who verified the documents"
+        structured_properties:
+          fk_target_table: "employees_db.public.employees"
+          fk_target_column: "employee_id"
+          fk_cross_database: "true"
+          fk_relationship_description: "Links to compliance officer who verified KYC documents"
+
+  - database: compliance_db
+    schema: public
+    table: aml_checks
+    columns:
+      - name: customer_id
+        description: "Customer being screened - references master customer record"
+        structured_properties:
+          fk_target_table: "accounts_db.public.customers"
+          fk_target_column: "customer_id"
+          fk_cross_database: "true"
+          fk_relationship_description: "Links AML check to customer master record in accounts database"
+
+      - name: transaction_id
+        description: "Transaction being screened if applicable"
+        structured_properties:
+          fk_target_table: "accounts_db.public.transactions"
+          fk_target_column: "transaction_id"
+          fk_cross_database: "true"
+          fk_relationship_description: "Links AML check to specific transaction in accounts database"
+
+      - name: reviewed_by
+        description: "Compliance officer who reviewed results"
+        structured_properties:
+          fk_target_table: "employees_db.public.employees"
+          fk_target_column: "employee_id"
+          fk_cross_database: "true"
+          fk_relationship_description: "Links to compliance officer employee record"
+
+  - database: compliance_db
+    schema: public
+    table: suspicious_activity_reports
+    columns:
+      - name: customer_id
+        description: "Customer involved in suspicious activity - references master customer record"
+        structured_properties:
+          fk_target_table: "accounts_db.public.customers"
+          fk_target_column: "customer_id"
+          fk_cross_database: "true"
+          fk_relationship_description: "Links SAR to customer master record in accounts database"
+
+      - name: account_id
+        description: "Account involved if applicable"
+        structured_properties:
+          fk_target_table: "accounts_db.public.accounts"
+          fk_target_column: "account_id"
+          fk_cross_database: "true"
+          fk_relationship_description: "Links SAR to specific account in accounts database"
+
+      - name: filed_by
+        description: "Compliance officer who filed the SAR"
+        structured_properties:
+          fk_target_table: "employees_db.public.employees"
+          fk_target_column: "employee_id"
+          fk_cross_database: "true"
+          fk_relationship_description: "Links to compliance officer who filed the report"
+
+  - database: compliance_db
+    schema: public
+    table: regulatory_reports
+    columns:
+      - name: prepared_by
+        description: "Employee who prepared the report"
+        structured_properties:
+          fk_target_table: "employees_db.public.employees"
+          fk_target_column: "employee_id"
+          fk_cross_database: "true"
+          fk_relationship_description: "Links to employee who prepared regulatory report"
+
+      - name: approved_by
+        description: "Senior officer who approved submission"
+        structured_properties:
+          fk_target_table: "employees_db.public.employees"
+          fk_target_column: "employee_id"
+          fk_cross_database: "true"
+          fk_relationship_description: "Links to senior officer who approved report submission"
+
+  - database: compliance_db
+    schema: public
+    table: audit_trails
+    columns:
+      - name: performed_by
+        description: "Employee who performed the action"
+        structured_properties:
+          fk_target_table: "employees_db.public.employees"
+          fk_target_column: "employee_id"
+          fk_cross_database: "true"
+          fk_relationship_description: "Links to employee who performed the audited action"
+
+  - database: compliance_db
+    schema: public
+    table: rule_violations
+    columns:
+      - name: resolved_by
+        description: "Employee who resolved the violation"
+        structured_properties:
+          fk_target_table: "employees_db.public.employees"
+          fk_target_column: "employee_id"
+          fk_cross_database: "true"
+          fk_relationship_description: "Links to employee who resolved the compliance violation"

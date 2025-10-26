@@ -1,0 +1,4092 @@
+
+databases:
+  accounts_db:
+    schemas:
+      public:
+        tables:
+          account_relationships:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,accounts_db.public.account_relationships,PROD)
+            description: Relationships between accounts such as joint ownership
+            row_count: 303
+            column_count: 5
+            columns:
+            - name: relationship_id
+              type: INTEGER
+              nullable: false
+              description: Auto-incrementing identifier for the relationship
+              stats:
+                unique_count: 303
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                min: '1192'
+                max: '1494'
+                mean: '1343.0'
+                median: '1343'
+                stdev: '87.61278445523804'
+                sample_values:
+                - '1192'
+                - '1193'
+                - '1194'
+                - '1195'
+            - name: primary_account_id
+              type: VARCHAR(50)
+              nullable: false
+              description: The main account in the relationship
+              foreign_key:
+                foreign_table: accounts_db.public.accounts
+                foreign_column: account_id
+                constraint_name: account_relationships_primary_account_id_fkey
+              stats:
+                unique_count: 253
+                unique_proportion: 0.8349835
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - ACC-F96154F284C0
+                - ACC-F96154F284C0
+                - ACC-8B3278B0CD43
+                - ACC-8B3278B0CD43
+            - name: related_account_id
+              type: VARCHAR(50)
+              nullable: false
+              description: The related or secondary account
+              foreign_key:
+                foreign_table: accounts_db.public.accounts
+                foreign_column: account_id
+                constraint_name: account_relationships_related_account_id_fkey
+              stats:
+                unique_count: 257
+                unique_proportion: 0.8481848
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - ACC-F0A2A70F48DD
+                - ACC-E3D4209F0CF8
+                - ACC-8FF4445778EB
+                - ACC-52A87BAF6F34
+            - name: relationship_type
+              type: VARCHAR(50)
+              nullable: false
+              description: 'Type: joint_owner, beneficiary, authorized_user'
+              stats:
+                unique_count: 4
+                unique_proportion: 0.013201321
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - joint_owner
+                - authorized_user
+                - authorized_user
+                - beneficiary
+            - name: created_at
+              type: TIMESTAMP WITHOUT TIME ZONE
+              nullable: true
+              description: When the relationship was established
+              stats:
+                unique_count: 247
+                unique_proportion: 0.8151815
+                null_count: 0
+                null_proportion: 0.0
+                min: '2019-08-30T15:14:00.480370'
+                max: '2025-10-25T16:06:14.577345'
+                sample_values:
+                - '2023-01-18 01:43:12.174762'
+                - '2025-10-25 02:10:01.816182'
+                - '2025-04-23 15:22:27.695852'
+                - '2024-12-05 20:28:34.297122'
+          accounts:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,accounts_db.public.accounts,PROD)
+            description: Bank accounts owned by customers
+            row_count: 1129
+            column_count: 10
+            columns:
+            - name: account_id
+              type: VARCHAR(50)
+              nullable: false
+              description: System-generated unique identifier for the account
+              stats:
+                unique_count: 1129
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - ACC-536BF5BDB958
+                - ACC-162378CC0F49
+                - ACC-9BDDE88203D8
+                - ACC-F9DB65014064
+            - name: account_number
+              type: VARCHAR(20)
+              nullable: false
+              description: Customer-facing account number displayed on statements
+              stats:
+                unique_count: 1129
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - '3982607324'
+                - '7106738424'
+                - '7697474788'
+                - '4479175934'
+            - name: customer_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Reference to the customer who owns this account
+              foreign_key:
+                foreign_table: accounts_db.public.customers
+                foreign_column: customer_id
+                constraint_name: accounts_customer_id_fkey
+              stats:
+                unique_count: 900
+                unique_proportion: 0.79716563
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - CUST-F03537BB4F
+                - CUST-F03537BB4F
+                - CUST-7945824B09
+                - CUST-1E80ADACDE
+            - name: account_type
+              type: VARCHAR(50)
+              nullable: false
+              description: 'Type of account: savings, checking, money_market'
+              stats:
+                unique_count: 4
+                unique_proportion: 0.0035429583
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - savings
+                - cd
+                - checking
+                - savings
+            - name: account_status
+              type: VARCHAR(20)
+              nullable: true
+              description: 'Current operational status: active, frozen, closed'
+              stats:
+                unique_count: 3
+                unique_proportion: 0.0026572188
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - active
+                - active
+                - closed
+                - active
+            - name: balance
+              type: NUMERIC(15, 2)
+              nullable: true
+              description: Current account balance in account currency
+              stats:
+                unique_count: 1129
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                min: '59.99'
+                max: '499957.69'
+                mean: '65428.50267493357'
+                median: '21468.39'
+                stdev: '103194.81967718'
+                sample_values:
+                - '28839.55'
+                - '63927.48'
+                - '21868.65'
+                - '24947.16'
+            - name: currency
+              type: VARCHAR(3)
+              nullable: true
+              description: ISO currency code for the account
+              stats:
+                unique_count: 4
+                unique_proportion: 0.0035429583
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - USD
+                - USD
+                - CAD
+                - USD
+            - name: opened_date
+              type: DATE
+              nullable: false
+              description: Date when the account was officially opened
+              stats:
+                unique_count: 886
+                unique_proportion: 0.7847653
+                null_count: 0
+                null_proportion: 0.0
+                min: '2018-12-18'
+                max: '2025-10-26'
+                sample_values:
+                - '2023-02-15'
+                - '2023-06-05'
+                - '2019-04-04'
+                - '2025-10-20'
+            - name: closed_date
+              type: DATE
+              nullable: true
+              description: Date when the account was closed, NULL if still active
+              stats:
+                unique_count: 0
+                null_count: 1129
+                null_proportion: 1.0
+                min: None
+                max: None
+                sample_values: []
+            - name: branch_code
+              type: VARCHAR(10)
+              nullable: true
+              description: Code of the branch where account was opened
+              stats:
+                unique_count: 0
+                null_count: 1129
+                null_proportion: 1.0
+                sample_values: []
+          customers:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,accounts_db.public.customers,PROD)
+            description: Core customer master data for account holders
+            row_count: 1200
+            column_count: 7
+            columns:
+            - name: customer_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique identifier for customer across all banking systems
+              stats:
+                unique_count: 1200
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - CUST-24D2660449
+                - CUST-C5E9D25310
+                - CUST-55AC980250
+                - CUST-D087242C6F
+            - name: first_name
+              type: VARCHAR(100)
+              nullable: false
+              description: Customer first name as per official documents
+              stats:
+                unique_count: 383
+                unique_proportion: 0.31916666
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - Michael
+                - Thomas
+                - Tyrone
+                - Jennifer
+            - name: last_name
+              type: VARCHAR(100)
+              nullable: false
+              description: Customer last name as per official documents
+              stats:
+                unique_count: 569
+                unique_proportion: 0.47416666
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - Roth
+                - Black
+                - Vazquez
+                - Roth
+            - name: date_of_birth
+              type: DATE
+              nullable: true
+              description: Customer date of birth for age verification and compliance
+              stats:
+                unique_count: 1153
+                unique_proportion: 0.9608333
+                null_count: 0
+                null_proportion: 0.0
+                min: '1940-02-09'
+                max: '2007-10-25'
+                sample_values:
+                - '1976-03-12'
+                - '1981-03-08'
+                - '1993-08-24'
+                - '1987-02-28'
+            - name: email
+              type: VARCHAR(150)
+              nullable: true
+              description: Primary email address for customer communication
+              stats:
+                unique_count: 1200
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - oneillelizabeth@example.org
+                - lisaweeks@example.org
+                - brittany97@example.org
+                - wardtroy@example.net
+            - name: phone
+              type: VARCHAR(20)
+              nullable: true
+              description: Primary phone number for customer contact
+              stats:
+                unique_count: 1200
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - 663-803-1660
+                - 823-312-2683
+                - 649-718-3588
+                - 719-518-7251
+            - name: created_at
+              type: TIMESTAMP WITHOUT TIME ZONE
+              nullable: true
+              description: Timestamp when customer record was created in the system
+              stats:
+                unique_count: 1200
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                min: '2018-10-29T08:39:32.242867'
+                max: '2025-10-23T03:09:29.404633'
+                sample_values:
+                - '2023-06-16 09:24:11.277714'
+                - '2025-07-30 05:38:38.313803'
+                - '2022-10-30 06:58:25.813275'
+                - '2019-11-16 09:48:11.323904'
+          transactions:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,accounts_db.public.transactions,PROD)
+            description: Financial transactions on accounts
+            row_count: 18095
+            column_count: 9
+            columns:
+            - name: transaction_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique identifier for each transaction
+              stats:
+                unique_count: 18095
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - TXN-7F34B23D45604FAD
+                - TXN-16BDD83CFF8D46DE
+                - TXN-81BCE1152E814BE8
+                - TXN-BEC52BD2FA85447E
+            - name: account_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Reference to the account involved in the transaction
+              foreign_key:
+                foreign_table: accounts_db.public.accounts
+                foreign_column: account_id
+                constraint_name: transactions_account_id_fkey
+              stats:
+                unique_count: 1129
+                unique_proportion: 0.062392928
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - ACC-56F26EAD18F1
+                - ACC-EF83A8F4261A
+                - ACC-0CDA3D9270AA
+                - ACC-B2DC8E42E0F9
+            - name: transaction_type
+              type: VARCHAR(50)
+              nullable: false
+              description: 'Type: deposit, withdrawal, transfer, payment, fee'
+              stats:
+                unique_count: 7
+                unique_proportion: 0.00038684718
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - withdrawal
+                - withdrawal
+                - payment
+                - salary
+            - name: transaction_amount
+              type: NUMERIC(15, 2)
+              nullable: false
+              description: Monetary amount of the transaction, positive for credits
+              stats:
+                unique_count: 17886
+                unique_proportion: 0.9884499
+                null_count: 0
+                null_proportion: 0.0
+                min: '-4999.9'
+                max: '7993.22'
+                mean: '-738.9710875932578'
+                median: '-832.26'
+                stdev: '2532.911886021048'
+                sample_values:
+                - '-2146.18'
+                - '-1114.10'
+                - '-1435.36'
+                - '4316.98'
+            - name: transaction_date
+              type: TIMESTAMP WITHOUT TIME ZONE
+              nullable: true
+              description: Timestamp when transaction was processed
+              stats:
+                unique_count: 17963
+                unique_proportion: 0.99270517
+                null_count: 0
+                null_proportion: 0.0
+                min: '2019-02-15T19:06:00'
+                max: '2025-10-26T23:59:00'
+                sample_values:
+                - '2019-02-15 19:06:00'
+                - '2019-03-17 02:47:00'
+                - '2019-04-14 00:36:00'
+                - '2019-04-17 00:18:00'
+            - name: description
+              type: TEXT
+              nullable: true
+              description: Human-readable description or memo for the transaction
+              stats:
+                unique_count: 6159
+                unique_proportion: 0.34037027
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - ATM Withdrawal
+                - Branch Withdrawal
+                - Bill Payment - redefine B2B supply-chains
+                - Direct Deposit
+            - name: balance_after
+              type: NUMERIC(15, 2)
+              nullable: true
+              description: Account balance after this transaction was applied
+              stats:
+                unique_count: 18074
+                unique_proportion: 0.99883944
+                null_count: 0
+                null_proportion: 0.0
+                min: '42.41'
+                max: '505723.94'
+                mean: '66402.39185465599'
+                median: '20770.66'
+                stdev: '104574.04158074'
+                sample_values:
+                - '251071.21'
+                - '62481.94'
+                - '5158.07'
+                - '25964.07'
+            - name: counterparty_account
+              type: VARCHAR(20)
+              nullable: true
+              description: Account number of the other party in transfers
+              stats:
+                unique_count: 3281
+                unique_proportion: 1.0
+                null_count: 14814
+                null_proportion: 0.8186792
+                sample_values:
+                - '4865598604'
+                - '8467031634'
+                - '3565810926'
+                - '3510204871'
+            - name: processed_by
+              type: VARCHAR(50)
+              nullable: true
+              description: Employee ID who processed the transaction, NULL for automated
+              stats:
+                unique_count: 150
+                unique_proportion: 0.027731558
+                null_count: 12686
+                null_proportion: 0.70107764
+                sample_values:
+                - EMP-24E4D71E
+                - EMP-D734E9D3
+                - EMP-9BC741E0
+                - EMP-3D606BB8
+  compliance_db:
+    schemas:
+      public:
+        tables:
+          aml_checks:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,compliance_db.public.aml_checks,PROD)
+            description: Anti-Money Laundering screening checks
+            columns:
+            - name: check_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique AML check identifier
+            - name: customer_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Customer being screened
+            - name: transaction_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Transaction being screened if applicable
+            - name: check_date
+              type: TIMESTAMP WITHOUT TIME ZONE
+              nullable: true
+              description: When check was performed
+            - name: check_type
+              type: VARCHAR(50)
+              nullable: false
+              description: 'Type: watchlist, sanctions, pep_screening, transaction_monitoring'
+            - name: aml_flag
+              type: BOOLEAN
+              nullable: true
+              description: Whether check raised a concern
+            - name: risk_level
+              type: VARCHAR(20)
+              nullable: true
+              description: 'Risk level identified: low, medium, high'
+            - name: screening_result
+              type: TEXT
+              nullable: true
+              description: Detailed results of the screening
+            - name: reviewed_by
+              type: VARCHAR(50)
+              nullable: true
+              description: Compliance officer who reviewed results
+          audit_trails:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,compliance_db.public.audit_trails,PROD)
+            description: System audit log for all critical actions
+            columns:
+            - name: audit_id
+              type: BIGINT
+              nullable: false
+              description: Auto-incrementing audit record identifier
+            - name: entity_type
+              type: VARCHAR(50)
+              nullable: false
+              description: 'Type of entity: account, customer, loan, transaction'
+            - name: entity_id
+              type: VARCHAR(50)
+              nullable: false
+              description: ID of the entity being audited
+            - name: action
+              type: VARCHAR(50)
+              nullable: false
+              description: 'Action performed: create, update, delete, view'
+            - name: performed_by
+              type: VARCHAR(50)
+              nullable: false
+              description: Employee who performed the action
+            - name: performed_at
+              type: TIMESTAMP WITHOUT TIME ZONE
+              nullable: true
+              description: Timestamp of the action
+            - name: old_value
+              type: TEXT
+              nullable: true
+              description: Previous value before change
+            - name: new_value
+              type: TEXT
+              nullable: true
+              description: New value after change
+            - name: ip_address
+              type: VARCHAR(45)
+              nullable: true
+              description: IP address from which action was performed
+          compliance_rules:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,compliance_db.public.compliance_rules,PROD)
+            description: Automated compliance rules and thresholds
+            columns:
+            - name: rule_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique compliance rule identifier
+            - name: rule_name
+              type: VARCHAR(200)
+              nullable: false
+              description: Descriptive name of the rule
+            - name: rule_type
+              type: VARCHAR(50)
+              nullable: false
+              description: 'Type: transaction_limit, velocity_check, geographic_restriction'
+            - name: description
+              type: TEXT
+              nullable: true
+              description: Detailed description of the rule
+            - name: threshold_value
+              type: NUMERIC(15, 2)
+              nullable: true
+              description: Numeric threshold that triggers the rule
+            - name: is_active
+              type: BOOLEAN
+              nullable: true
+              description: Whether rule is currently enforced
+            - name: created_date
+              type: DATE
+              nullable: false
+              description: Date rule was created
+          kyc_records:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,compliance_db.public.kyc_records,PROD)
+            description: Know Your Customer verification records
+            columns:
+            - name: kyc_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique KYC record identifier
+            - name: customer_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Customer being verified
+            - name: verification_date
+              type: DATE
+              nullable: false
+              description: Date verification was completed
+            - name: kyc_status
+              type: VARCHAR(20)
+              nullable: false
+              description: 'Status: verified, pending, expired, rejected'
+            - name: document_type
+              type: VARCHAR(100)
+              nullable: true
+              description: 'Type of ID document: passport, drivers_license, national_id'
+            - name: document_number
+              type: VARCHAR(100)
+              nullable: true
+              description: Identification document number
+            - name: expiry_date
+              type: DATE
+              nullable: true
+              description: Document expiration date
+            - name: verified_by
+              type: VARCHAR(50)
+              nullable: true
+              description: Employee who verified the documents
+            - name: next_review_date
+              type: DATE
+              nullable: true
+              description: Date when KYC needs to be refreshed
+            - name: risk_rating
+              type: VARCHAR(20)
+              nullable: true
+              description: 'Customer risk level: low, medium, high'
+          regulatory_reports:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,compliance_db.public.regulatory_reports,PROD)
+            description: Regulatory compliance reports submitted to authorities
+            columns:
+            - name: report_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique regulatory report identifier
+            - name: report_type
+              type: VARCHAR(100)
+              nullable: false
+              description: 'Type: capital_adequacy, liquidity, stress_test, quarterly_filing'
+            - name: reporting_period_start
+              type: DATE
+              nullable: false
+              description: Start of reporting period
+            - name: reporting_period_end
+              type: DATE
+              nullable: false
+              description: End of reporting period
+            - name: submission_date
+              type: DATE
+              nullable: true
+              description: Date submitted to regulator
+            - name: status
+              type: VARCHAR(50)
+              nullable: true
+              description: 'Status: pending, submitted, accepted, rejected'
+            - name: prepared_by
+              type: VARCHAR(50)
+              nullable: true
+              description: Employee who prepared the report
+            - name: approved_by
+              type: VARCHAR(50)
+              nullable: true
+              description: Senior officer who approved submission
+          rule_violations:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,compliance_db.public.rule_violations,PROD)
+            description: Compliance rule violations and their resolution
+            columns:
+            - name: violation_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique violation identifier
+            - name: rule_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Rule that was violated
+              foreign_key:
+                foreign_table: compliance_db.public.compliance_rules
+                foreign_column: rule_id
+                constraint_name: rule_violations_rule_id_fkey
+            - name: entity_type
+              type: VARCHAR(50)
+              nullable: false
+              description: 'Type of entity that violated: transaction, account, customer'
+            - name: entity_id
+              type: VARCHAR(50)
+              nullable: false
+              description: ID of the entity that violated
+            - name: violation_date
+              type: TIMESTAMP WITHOUT TIME ZONE
+              nullable: true
+              description: When violation occurred
+            - name: severity
+              type: VARCHAR(20)
+              nullable: true
+              description: 'Severity: low, medium, high, critical'
+            - name: status
+              type: VARCHAR(50)
+              nullable: true
+              description: 'Status: open, investigating, resolved, false_positive'
+            - name: resolution_notes
+              type: TEXT
+              nullable: true
+              description: Notes about how violation was resolved
+            - name: resolved_by
+              type: VARCHAR(50)
+              nullable: true
+              description: Employee who resolved the violation
+            - name: resolved_date
+              type: DATE
+              nullable: true
+              description: Date violation was resolved
+          suspicious_activity_reports:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,compliance_db.public.suspicious_activity_reports,PROD)
+            description: Suspicious Activity Reports filed with regulators
+            columns:
+            - name: sar_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique SAR identifier
+            - name: customer_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Customer involved in suspicious activity
+            - name: account_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Account involved if applicable
+            - name: report_date
+              type: DATE
+              nullable: false
+              description: Date SAR was created
+            - name: activity_type
+              type: VARCHAR(100)
+              nullable: false
+              description: 'Type: structuring, unusual_pattern, high_risk_country'
+            - name: description
+              type: TEXT
+              nullable: false
+              description: Detailed description of suspicious activity
+            - name: sar_status
+              type: VARCHAR(50)
+              nullable: true
+              description: 'Status: draft, filed, under_review, closed'
+            - name: filed_date
+              type: DATE
+              nullable: true
+              description: Date filed with regulator
+            - name: regulatory_tier
+              type: VARCHAR(20)
+              nullable: true
+              description: Classification tier for regulatory purposes
+            - name: filed_by
+              type: VARCHAR(50)
+              nullable: true
+              description: Compliance officer who filed the SAR
+            - name: amount_involved
+              type: NUMERIC(15, 2)
+              nullable: true
+              description: Total monetary amount involved
+  customer_db:
+    schemas:
+      public:
+        tables:
+          campaign_responses:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,customer_db.public.campaign_responses,PROD)
+            description: Customer responses to marketing campaigns
+            row_count: 76
+            column_count: 6
+            columns:
+            - name: response_id
+              type: INTEGER
+              nullable: false
+              description: Auto-incrementing response identifier
+              stats:
+                unique_count: 76
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                min: '299'
+                max: '374'
+                mean: '336.5'
+                median: '336.5'
+                stdev: '22.08317610006918'
+                sample_values:
+                - '299'
+                - '300'
+                - '301'
+                - '302'
+            - name: campaign_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Campaign that generated the response
+              foreign_key:
+                foreign_table: customer_db.public.campaigns
+                foreign_column: campaign_id
+                constraint_name: campaign_responses_campaign_id_fkey
+              stats:
+                unique_count: 11
+                unique_proportion: 0.14473684
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - CAM-9F84EAA21D
+                - CAM-909AE3DFB0
+                - CAM-DB14FFC05D
+                - CAM-C4F1D3D698
+            - name: customer_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Customer who responded
+              foreign_key:
+                foreign_table: customer_db.public.customer_profiles
+                foreign_column: customer_id
+                constraint_name: campaign_responses_customer_id_fkey
+              stats:
+                unique_count: 60
+                unique_proportion: 0.7894737
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - CUST-8D96363285
+                - CUST-8D96363285
+                - CUST-2D187588E0
+                - CUST-B6506A9DB2
+            - name: response_date
+              type: DATE
+              nullable: true
+              description: When customer responded
+              stats:
+                unique_count: 64
+                unique_proportion: 0.84210527
+                null_count: 0
+                null_proportion: 0.0
+                min: '2024-11-04'
+                max: '2025-10-26'
+                sample_values:
+                - '2025-07-30'
+                - '2024-11-25'
+                - '2025-04-21'
+                - '2025-10-17'
+            - name: response_type
+              type: VARCHAR(50)
+              nullable: true
+              description: 'Type: clicked, opened, unsubscribed, purchased'
+              stats:
+                unique_count: 4
+                unique_proportion: 0.05263158
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - unsubscribed
+                - opened
+                - purchased
+                - unsubscribed
+            - name: converted
+              type: BOOLEAN
+              nullable: true
+              description: Whether response resulted in conversion
+              stats:
+                unique_count: 2
+                unique_proportion: 0.02631579
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - 'False'
+                - 'False'
+                - 'False'
+                - 'False'
+          campaigns:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,customer_db.public.campaigns,PROD)
+            description: Marketing campaigns targeting customers
+            row_count: 11
+            column_count: 6
+            columns:
+            - name: campaign_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique campaign identifier
+              stats:
+                unique_count: 11
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - CAM-1B1BC53F0B
+                - CAM-DB14FFC05D
+                - CAM-E0AAEC8667
+                - CAM-C4F1D3D698
+            - name: campaign_name
+              type: VARCHAR(200)
+              nullable: false
+              description: Descriptive name of the marketing campaign
+              stats:
+                unique_count: 11
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - Retirement Planning Seminar
+                - Mortgage Rate Special
+                - Back to School Savings
+                - Year-End Tax Planning
+            - name: campaign_type
+              type: VARCHAR(50)
+              nullable: true
+              description: 'Type: email, direct_mail, digital, cross_sell'
+              stats:
+                unique_count: 3
+                unique_proportion: 0.27272728
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - cross_sell
+                - cross_sell
+                - digital
+                - email
+            - name: start_date
+              type: DATE
+              nullable: true
+              description: Campaign start date
+              stats:
+                unique_count: 11
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                min: '2024-11-01'
+                max: '2025-09-22'
+                sample_values:
+                - '2025-07-26'
+                - '2025-04-20'
+                - '2025-03-25'
+                - '2025-09-22'
+            - name: end_date
+              type: DATE
+              nullable: true
+              description: Campaign end date
+              stats:
+                unique_count: 11
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                min: '2024-11-29'
+                max: '2025-10-31'
+                sample_values:
+                - '2025-10-05'
+                - '2025-05-04'
+                - '2025-06-23'
+                - '2025-10-31'
+            - name: target_segment
+              type: VARCHAR(50)
+              nullable: true
+              description: Customer segment targeted by campaign
+              stats:
+                unique_count: 4
+                unique_proportion: 0.36363637
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - corporate
+                - all
+                - corporate
+                - all
+          complaints:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,customer_db.public.complaints,PROD)
+            description: Customer complaints and their resolution tracking
+            row_count: 96
+            column_count: 10
+            columns:
+            - name: complaint_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique complaint identifier
+              stats:
+                unique_count: 96
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - CMP-2E1A7DC9B194
+                - CMP-606A79B92B06
+                - CMP-5CE8D556EFD3
+                - CMP-AB09ACE22B48
+            - name: customer_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Customer who filed the complaint
+              foreign_key:
+                foreign_table: customer_db.public.customer_profiles
+                foreign_column: customer_id
+                constraint_name: complaints_customer_id_fkey
+              stats:
+                unique_count: 96
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - CUST-13D0671A68
+                - CUST-5684E451D3
+                - CUST-883CC87346
+                - CUST-75D5CEF80F
+            - name: complaint_type
+              type: VARCHAR(100)
+              nullable: false
+              description: 'Category: service, fee, product, fraud, other'
+              stats:
+                unique_count: 5
+                unique_proportion: 0.052083332
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - product
+                - product
+                - other
+                - other
+            - name: description
+              type: TEXT
+              nullable: true
+              description: Detailed description of the complaint
+              stats:
+                unique_count: 14
+                unique_proportion: 0.14583333
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - Issues with account features
+                - Product defect
+                - Miscellaneous issue
+                - Miscellaneous issue
+            - name: status
+              type: VARCHAR(50)
+              nullable: true
+              description: 'Current status: open, investigating, resolved, closed'
+              stats:
+                unique_count: 4
+                unique_proportion: 0.041666668
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - resolved
+                - investigating
+                - closed
+                - resolved
+            - name: priority
+              type: VARCHAR(20)
+              nullable: true
+              description: 'Priority level: low, medium, high, critical'
+              stats:
+                unique_count: 4
+                unique_proportion: 0.041666668
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - low
+                - medium
+                - critical
+                - medium
+            - name: filed_date
+              type: TIMESTAMP WITHOUT TIME ZONE
+              nullable: true
+              description: When complaint was filed
+              stats:
+                unique_count: 96
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                min: '2019-10-29T08:04:32.648012'
+                max: '2025-10-23T08:55:17.507838'
+                sample_values:
+                - '2025-10-19 21:48:37.750909'
+                - '2025-10-21 21:58:58.066950'
+                - '2025-03-08 23:51:15.756326'
+                - '2023-08-30 09:34:23.864753'
+            - name: resolved_date
+              type: TIMESTAMP WITHOUT TIME ZONE
+              nullable: true
+              description: When complaint was resolved, NULL if still open
+              stats:
+                unique_count: 63
+                unique_proportion: 1.0
+                null_count: 33
+                null_proportion: 0.34375
+                min: '2020-06-16T17:43:52.165322'
+                max: '2025-10-28T13:55:17.507838'
+                sample_values:
+                - '2025-10-26 09:48:37.750909'
+                - '2025-03-09 13:51:15.756326'
+                - '2023-09-02 12:34:23.864753'
+                - '2024-05-11 06:50:42.248506'
+            - name: resolution_time_hours
+              type: INTEGER
+              nullable: true
+              description: Time taken to resolve in hours
+              stats:
+                unique_count: 53
+                unique_proportion: 0.84126985
+                null_count: 33
+                null_proportion: 0.34375
+                min: '11'
+                max: '168'
+                mean: '78.4920634920635'
+                median: '76'
+                stdev: '46.465343663878734'
+                sample_values:
+                - '156'
+                - '14'
+                - '75'
+                - '22'
+            - name: assigned_to
+              type: VARCHAR(50)
+              nullable: true
+              description: Employee ID responsible for resolution
+              structured_properties:
+                fk_target_table: employees_db.public.employees
+                fk_target_column: employee_id
+                fk_cross_database: 'true'
+                fk_relationship_description: Links to employee assigned to resolve
+                  complaint
+              stats:
+                unique_count: 67
+                unique_proportion: 0.77011496
+                null_count: 9
+                null_proportion: 0.09375
+                sample_values:
+                - EMP-CB77DD44
+                - EMP-CD8DE785
+                - EMP-C2ADD9EF
+                - EMP-A57477CD
+          customer_profiles:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,customer_db.public.customer_profiles,PROD)
+            description: Customer relationship management profiles
+            row_count: 1200
+            column_count: 15
+            columns:
+            - name: customer_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique customer identifier matching across all systems
+              stats:
+                unique_count: 1200
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - CUST-24D2660449
+                - CUST-C5E9D25310
+                - CUST-55AC980250
+                - CUST-D087242C6F
+            - name: full_name
+              type: VARCHAR(200)
+              nullable: false
+              description: Complete name of the customer
+              stats:
+                unique_count: 1188
+                unique_proportion: 0.99
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - Michael Roth
+                - Thomas Black
+                - Tyrone Vazquez
+                - Jennifer Roth
+            - name: email
+              type: VARCHAR(150)
+              nullable: true
+              description: Primary email for communications and alerts
+              stats:
+                unique_count: 1200
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - oneillelizabeth@example.org
+                - lisaweeks@example.org
+                - brittany97@example.org
+                - wardtroy@example.net
+            - name: phone
+              type: VARCHAR(20)
+              nullable: true
+              description: Primary contact phone number
+              stats:
+                unique_count: 1200
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - 663-803-1660
+                - 823-312-2683
+                - 649-718-3588
+                - 719-518-7251
+            - name: address
+              type: TEXT
+              nullable: true
+              description: Full residential address
+              stats:
+                unique_count: 1200
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - 2948 Mckay Centers Apt. 364, West Jennifer, CA 01704
+                - 43158 Brandon Crescent Apt. 075, Lake Kevin, WA 68849
+                - 245 Kevin Court, Christianhaven, KS 37304
+                - 019 James Route, Gillton, AR 47139
+            - name: city
+              type: VARCHAR(100)
+              nullable: true
+              description: City of residence
+              stats:
+                unique_count: 1143
+                unique_proportion: 0.9525
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - West Jennifer
+                - Lake Kevin
+                - Christianhaven
+                - Gillton
+            - name: country
+              type: VARCHAR(100)
+              nullable: true
+              description: Country of residence
+              stats:
+                unique_count: 1
+                unique_proportion: 0.00083333335
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - USA
+                - USA
+                - USA
+                - USA
+            - name: customer_segment
+              type: VARCHAR(50)
+              nullable: true
+              description: 'Classification: retail, premium, corporate, private_banking'
+              stats:
+                unique_count: 4
+                unique_proportion: 0.0033333334
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - corporate
+                - retail
+                - retail
+                - retail
+            - name: customer_status
+              type: VARCHAR(20)
+              nullable: true
+              description: 'Lifecycle status: active, dormant, closed'
+              stats:
+                unique_count: 3
+                unique_proportion: 0.0025
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - active
+                - active
+                - active
+                - active
+            - name: onboarding_date
+              type: DATE
+              nullable: false
+              description: Date when customer relationship was established
+              stats:
+                unique_count: 977
+                unique_proportion: 0.81416667
+                null_count: 0
+                null_proportion: 0.0
+                min: '2018-10-29'
+                max: '2025-10-23'
+                sample_values:
+                - '2023-06-16'
+                - '2025-07-30'
+                - '2022-10-30'
+                - '2019-11-16'
+            - name: assigned_agent_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Employee ID of the assigned relationship manager
+              structured_properties:
+                fk_target_table: employees_db.public.employees
+                fk_target_column: employee_id
+                fk_cross_database: 'true'
+                fk_relationship_description: Links to relationship manager employee
+                  record
+              stats:
+                unique_count: 149
+                unique_proportion: 0.15204081
+                null_count: 220
+                null_proportion: 0.18333334
+                sample_values:
+                - EMP-BFAB1F4A
+                - EMP-A72AB225
+                - EMP-A8F15423
+                - EMP-9F3E8D69
+            - name: kyc_status
+              type: VARCHAR(20)
+              nullable: true
+              description: Know Your Customer verification status
+              stats:
+                unique_count: 3
+                unique_proportion: 0.0025
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - verified
+                - verified
+                - verified
+                - verified
+            - name: risk_rating
+              type: VARCHAR(20)
+              nullable: true
+              description: 'Overall customer risk level: low, medium, high'
+              stats:
+                unique_count: 3
+                unique_proportion: 0.0025
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - low
+                - low
+                - medium
+                - low
+            - name: created_at
+              type: TIMESTAMP WITHOUT TIME ZONE
+              nullable: true
+              description: Record creation timestamp
+              stats:
+                unique_count: 1200
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                min: '2018-10-29T08:39:32.242867'
+                max: '2025-10-23T03:09:29.404633'
+                sample_values:
+                - '2023-06-16 09:24:11.277714'
+                - '2025-07-30 05:38:38.313803'
+                - '2022-10-30 06:58:25.813275'
+                - '2019-11-16 09:48:11.323904'
+            - name: updated_at
+              type: TIMESTAMP WITHOUT TIME ZONE
+              nullable: true
+              description: Last update timestamp
+              stats:
+                unique_count: 1200
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                min: '2018-10-29T08:39:32.242867'
+                max: '2025-10-23T03:09:29.404633'
+                sample_values:
+                - '2023-06-16 09:24:11.277714'
+                - '2025-07-30 05:38:38.313803'
+                - '2022-10-30 06:58:25.813275'
+                - '2019-11-16 09:48:11.323904'
+          interactions:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,customer_db.public.interactions,PROD)
+            description: Customer interactions across all channels
+            row_count: 2187
+            column_count: 9
+            columns:
+            - name: interaction_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique identifier for each customer interaction
+              stats:
+                unique_count: 2187
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - INT-6BD9D51EA05E
+                - INT-F9CFD1474298
+                - INT-DB64D9B1F3AD
+                - INT-68A068FE8809
+            - name: customer_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Reference to customer who had the interaction
+              foreign_key:
+                foreign_table: customer_db.public.customer_profiles
+                foreign_column: customer_id
+                constraint_name: interactions_customer_id_fkey
+              stats:
+                unique_count: 968
+                unique_proportion: 0.44261545
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - CUST-24D2660449
+                - CUST-24D2660449
+                - CUST-24D2660449
+                - CUST-24D2660449
+            - name: interaction_type
+              type: VARCHAR(50)
+              nullable: false
+              description: 'Type: call, email, chat, branch_visit, complaint'
+              stats:
+                unique_count: 5
+                unique_proportion: 0.002286237
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - support
+                - inquiry
+                - support
+                - inquiry
+            - name: channel
+              type: VARCHAR(50)
+              nullable: true
+              description: 'Channel used: phone, email, web, mobile_app, branch'
+              stats:
+                unique_count: 5
+                unique_proportion: 0.002286237
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - web
+                - email
+                - email
+                - phone
+            - name: interaction_date
+              type: TIMESTAMP WITHOUT TIME ZONE
+              nullable: true
+              description: When the interaction occurred
+              stats:
+                unique_count: 2187
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                min: '2019-02-12T09:44:43.542890'
+                max: '2025-10-27T05:27:15.461751'
+                sample_values:
+                - '2024-02-21 22:14:11.277714'
+                - '2024-12-01 20:09:11.277714'
+                - '2023-12-18 17:33:11.277714'
+                - '2025-09-25 01:28:11.277714'
+            - name: duration_minutes
+              type: INTEGER
+              nullable: true
+              description: Length of interaction in minutes
+              stats:
+                unique_count: 45
+                unique_proportion: 0.020576132
+                null_count: 0
+                null_proportion: 0.0
+                min: '1'
+                max: '45'
+                mean: '13.989026063100138'
+                median: '9'
+                stdev: '12.195902762894335'
+                sample_values:
+                - '8'
+                - '8'
+                - '7'
+                - '44'
+            - name: notes
+              type: TEXT
+              nullable: true
+              description: Detailed notes about the interaction
+              stats:
+                unique_count: 1374
+                unique_proportion: 0.6282579
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - Handled support through web channel
+                - Customer requested information about innovate proactive experiences
+                - Customer inquired about seize e-business communities
+                - Discussed inquiry regarding account services
+            - name: handled_by
+              type: VARCHAR(50)
+              nullable: true
+              description: Employee ID who handled the interaction
+              structured_properties:
+                fk_target_table: employees_db.public.employees
+                fk_target_column: employee_id
+                fk_cross_database: 'true'
+                fk_relationship_description: Links to customer service employee who
+                  handled the interaction
+              stats:
+                unique_count: 150
+                unique_proportion: 0.08522727
+                null_count: 427
+                null_proportion: 0.19524463
+                sample_values:
+                - EMP-4B9F1C19
+                - EMP-3D606BB8
+                - EMP-BB6F64FB
+                - EMP-16615485
+            - name: outcome
+              type: VARCHAR(50)
+              nullable: true
+              description: 'Result: resolved, escalated, follow_up_needed'
+              stats:
+                unique_count: 3
+                unique_proportion: 0.0013717421
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - resolved
+                - resolved
+                - resolved
+                - resolved
+          satisfaction_surveys:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,customer_db.public.satisfaction_surveys,PROD)
+            description: Customer satisfaction and NPS survey responses
+            row_count: 656
+            column_count: 7
+            columns:
+            - name: survey_id
+              type: INTEGER
+              nullable: false
+              description: Auto-incrementing survey identifier
+              stats:
+                unique_count: 656
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                min: '2539'
+                max: '3194'
+                mean: '2866.5'
+                median: '2866.5'
+                stdev: '189.515170896686'
+                sample_values:
+                - '2539'
+                - '2540'
+                - '2541'
+                - '2542'
+            - name: customer_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Customer who completed the survey
+              foreign_key:
+                foreign_table: customer_db.public.customer_profiles
+                foreign_column: customer_id
+                constraint_name: satisfaction_surveys_customer_id_fkey
+              stats:
+                unique_count: 506
+                unique_proportion: 0.77134144
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - CUST-A95325D0A9
+                - CUST-12E89C35EE
+                - CUST-F9911178BB
+                - CUST-339C8447B2
+            - name: interaction_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Related interaction if survey is interaction-specific
+              foreign_key:
+                foreign_table: customer_db.public.interactions
+                foreign_column: interaction_id
+                constraint_name: satisfaction_surveys_interaction_id_fkey
+              stats:
+                unique_count: 656
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - INT-2401D7A96CB6
+                - INT-EA5F656467FB
+                - INT-AE5BA1302693
+                - INT-2D4E83414F07
+            - name: nps_score
+              type: INTEGER
+              nullable: true
+              description: 'Net Promoter Score: 0-10 scale'
+              stats:
+                unique_count: 11
+                unique_proportion: 0.016768293
+                null_count: 0
+                null_proportion: 0.0
+                min: '0'
+                max: '10'
+                mean: '7.435975609756097'
+                median: '8.0'
+                stdev: '2.5410555526280043'
+                sample_values:
+                - '8'
+                - '10'
+                - '6'
+                - '4'
+            - name: satisfaction_rating
+              type: INTEGER
+              nullable: true
+              description: 'Overall satisfaction: 1-5 stars'
+              stats:
+                unique_count: 5
+                unique_proportion: 0.0076219514
+                null_count: 0
+                null_proportion: 0.0
+                min: '1'
+                max: '5'
+                mean: '3.847560975609756'
+                median: '4.0'
+                stdev: '1.2556778514034983'
+                sample_values:
+                - '4'
+                - '4'
+                - '4'
+                - '1'
+            - name: survey_date
+              type: DATE
+              nullable: false
+              description: Date survey was completed
+              stats:
+                unique_count: 529
+                unique_proportion: 0.80640244
+                null_count: 0
+                null_proportion: 0.0
+                min: '2019-05-30'
+                max: '2025-10-28'
+                sample_values:
+                - '2025-06-14'
+                - '2025-10-17'
+                - '2025-09-19'
+                - '2025-07-10'
+            - name: comments
+              type: TEXT
+              nullable: true
+              description: Free-text customer feedback
+              stats:
+                unique_count: 11
+                unique_proportion: 0.036666665
+                null_count: 356
+                null_proportion: 0.54268295
+                sample_values:
+                - Great service!
+                - Long wait time.
+                - Expected better.
+                - Average experience.
+  easylot:
+    schemas:
+      marketing:
+        tables:
+          campaign:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,easylot.marketing.campaign,PROD)
+            description: 'Marketing campaigns master. Relationship: product.pr_id
+              -> campaign.product_pr_id'
+            tags:
+            - marketing
+            - core
+            row_count: 8
+            column_count: 8
+            columns:
+            - name: campaign_id
+              type: INTEGER
+              nullable: false
+              stats:
+                unique_count: 8
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                min: '1'
+                max: '8'
+                mean: '4.5'
+                median: '4.5'
+                stdev: '2.449489742783178'
+                sample_values:
+                - '1'
+                - '2'
+                - '3'
+                - '4'
+            - name: product_pr_id
+              type: UUID
+              nullable: false
+              description: 'FK: public.product.pr_id (UUID)'
+              foreign_key:
+                foreign_table: easylot.marketing.product
+                foreign_column: pr_id
+                constraint_name: fk_campaign_product
+              stats:
+                unique_count: 8
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - 0005db09-d466-408d-8eee-474b822cd53c
+                - 000f08bc-db47-4bb4-a1c0-8116a2701043
+                - 0010d90e-35ac-4eda-9856-31c8049e8ce4
+                - 00124eb6-a8bb-4086-a7b9-a710e4cd1238
+            - name: channel_id
+              type: SMALLINT
+              nullable: false
+              foreign_key:
+                foreign_table: easylot.marketing.channel_dim
+                foreign_column: channel_id
+                constraint_name: campaign_channel_id_fkey
+              stats:
+                unique_count: 4
+                unique_proportion: 0.5
+                null_count: 0
+                null_proportion: 0.0
+                min: '1'
+                max: '4'
+                mean: '3.125'
+                median: '3.5'
+                stdev: '1.1259916264596033'
+                sample_values:
+                - '3'
+                - '4'
+                - '1'
+                - '4'
+            - name: start_date
+              type: DATE
+              nullable: false
+              stats:
+                unique_count: 6
+                unique_proportion: 0.75
+                null_count: 0
+                null_proportion: 0.0
+                min: '2025-09-28'
+                max: '2025-10-13'
+                sample_values:
+                - '2025-10-05'
+                - '2025-10-13'
+                - '2025-09-30'
+                - '2025-10-04'
+            - name: end_date
+              type: DATE
+              nullable: true
+              stats:
+                unique_count: 7
+                unique_proportion: 0.875
+                null_count: 0
+                null_proportion: 0.0
+                min: '2025-11-13'
+                max: '2025-12-11'
+                sample_values:
+                - '2025-12-11'
+                - '2025-11-13'
+                - '2025-11-27'
+                - '2025-12-08'
+            - name: budget_huf
+              type: NUMERIC(14, 2)
+              nullable: true
+              stats:
+                unique_count: 8
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                min: '781652.0'
+                max: '1651448.0'
+                mean: '1103359.5'
+                median: '1025180.0'
+                stdev: '302403.55717957'
+                sample_values:
+                - '781652.00'
+                - '1058730.00'
+                - '1651448.00'
+                - '991630.00'
+            - name: target_cpc_huf
+              type: NUMERIC(12, 4)
+              nullable: true
+              stats:
+                unique_count: 8
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                min: '31.0'
+                max: '89.0'
+                mean: '57.75'
+                median: '52.5'
+                stdev: '24.609812212669507'
+                sample_values:
+                - '82.0000'
+                - '35.0000'
+                - '56.0000'
+                - '34.0000'
+            - name: note
+              type: TEXT
+              nullable: true
+              stats:
+                unique_count: 1
+                unique_proportion: 0.125
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - demo autogen
+                - demo autogen
+                - demo autogen
+                - demo autogen
+          channel_dim:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,easylot.marketing.channel_dim,PROD)
+            description: Advertising channels dimension table
+            tags:
+            - marketing
+            - core
+            row_count: 4
+            column_count: 2
+            columns:
+            - name: channel_id
+              type: SMALLINT
+              nullable: false
+              stats:
+                unique_count: 4
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                min: '1'
+                max: '4'
+                mean: '2.5'
+                median: '2.5'
+                stdev: '1.2909944487358056'
+                sample_values:
+                - '1'
+                - '2'
+                - '4'
+                - '3'
+            - name: channel_name
+              type: TEXT
+              nullable: false
+              stats:
+                unique_count: 4
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - Google
+                - Facebook
+                - Email
+                - TikTok
+          spend_daily:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,easylot.marketing.spend_daily,PROD)
+            description: Daily spending and performance (impressions, clicks, spend_huf)
+            tags:
+            - marketing
+            row_count: 248
+            column_count: 5
+            columns:
+            - name: day
+              type: DATE
+              nullable: false
+              stats:
+                unique_count: 31
+                unique_proportion: 0.125
+                null_count: 0
+                null_proportion: 0.0
+                min: '2025-09-23'
+                max: '2025-10-23'
+                sample_values:
+                - '2025-09-23'
+                - '2025-09-23'
+                - '2025-09-23'
+                - '2025-09-23'
+            - name: campaign_id
+              type: INTEGER
+              nullable: false
+              foreign_key:
+                foreign_table: easylot.marketing.campaign
+                foreign_column: campaign_id
+                constraint_name: spend_daily_campaign_id_fkey
+              stats:
+                unique_count: 8
+                unique_proportion: 0.032258064
+                null_count: 0
+                null_proportion: 0.0
+                min: '1'
+                max: '8'
+                mean: '4.5'
+                median: '4.5'
+                stdev: '2.2959213968968415'
+                sample_values:
+                - '1'
+                - '2'
+                - '3'
+                - '4'
+            - name: impressions
+              type: BIGINT
+              nullable: true
+              stats:
+                unique_count: 241
+                unique_proportion: 0.9717742
+                null_count: 0
+                null_proportion: 0.0
+                min: '1062'
+                max: '9984'
+                mean: '5505.7338709677415'
+                median: '5498.0'
+                stdev: '2603.210829964579'
+                sample_values:
+                - '1815'
+                - '4245'
+                - '4108'
+                - '1725'
+            - name: clicks
+              type: BIGINT
+              nullable: true
+              stats:
+                unique_count: 213
+                unique_proportion: 0.858871
+                null_count: 0
+                null_proportion: 0.0
+                min: '51'
+                max: '940'
+                mean: '453.4959677419355'
+                median: '443.5'
+                stdev: '245.877623324473'
+                sample_values:
+                - '473'
+                - '549'
+                - '604'
+                - '243'
+            - name: spend_huf
+              type: NUMERIC(14, 2)
+              nullable: true
+              stats:
+                unique_count: 247
+                unique_proportion: 0.99596775
+                null_count: 0
+                null_proportion: 0.0
+                min: '10002.0'
+                max: '99556.0'
+                mean: '53182.41935483871'
+                median: '51716.0'
+                stdev: '25443.33691818'
+                sample_values:
+                - '32799.00'
+                - '78037.00'
+                - '98011.00'
+                - '39903.00'
+          v_campaign_enriched:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,easylot.marketing.v_campaign_enriched,PROD)
+            description: 'Enriched view: campaign × product × channel_dim (product
+              name, brand, channel)'
+            tags:
+            - marketing
+            - view
+            - enriched
+            columns:
+            - name: campaign_id
+              type: INTEGER
+              nullable: true
+            - name: product_pr_id
+              type: UUID
+              nullable: true
+            - name: product_name
+              type: TEXT
+              nullable: true
+            - name: product_brand
+              type: TEXT
+              nullable: true
+            - name: channel_id
+              type: SMALLINT
+              nullable: true
+            - name: channel_name
+              type: TEXT
+              nullable: true
+            - name: start_date
+              type: DATE
+              nullable: true
+            - name: end_date
+              type: DATE
+              nullable: true
+            - name: budget_huf
+              type: NUMERIC(14, 2)
+              nullable: true
+          v_campaign_kpi:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,easylot.marketing.v_campaign_kpi,PROD)
+            description: 'KPI view: CTR, CPC and daily spending per campaign'
+            tags:
+            - marketing
+            - view
+            - kpi
+            columns:
+            - name: day
+              type: DATE
+              nullable: true
+            - name: campaign_id
+              type: INTEGER
+              nullable: true
+            - name: pr_name
+              type: TEXT
+              nullable: true
+            - name: impressions
+              type: BIGINT
+              nullable: true
+            - name: clicks
+              type: BIGINT
+              nullable: true
+            - name: spend_huf
+              type: NUMERIC(14, 2)
+              nullable: true
+            - name: cpc_huf
+              type: NUMERIC
+              nullable: true
+          v_campaign_product_bridge:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,easylot.marketing.v_campaign_product_bridge,PROD)
+            description: 'Bridge view: campaign × product -> (campaign_id, product_pr_id,
+              pr_name)'
+            tags:
+            - marketing
+            - view
+            - bridge
+            columns:
+            - name: campaign_id
+              type: INTEGER
+              nullable: true
+            - name: product_pr_id
+              type: UUID
+              nullable: true
+            - name: pr_name
+              type: TEXT
+              nullable: true
+      product:
+        tables:
+          product:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,easylot.product.product,PROD)
+            description: 'Product master table. Source: EasyLot application'
+            columns:
+            - name: pr_id
+              type: UUID
+              nullable: false
+            - name: pr_merchant_id
+              type: UUID
+              nullable: false
+            - name: pr_brand
+              type: TEXT
+              nullable: false
+            - name: pr_main_type
+              type: TEXT
+              nullable: false
+            - name: pr_sub_type
+              type: TEXT
+              nullable: false
+            - name: pr_name
+              type: TEXT
+              nullable: false
+            - name: pr_status
+              type: TEXT
+              nullable: false
+            - name: pr_data
+              type: JSON
+              nullable: false
+            - name: pr_created
+              type: TIMESTAMP(6) WITHOUT TIME ZONE
+              nullable: false
+            - name: pr_creator
+              type: TEXT
+              nullable: false
+            - name: pr_modified
+              type: TIMESTAMP(6) WITHOUT TIME ZONE
+              nullable: false
+            - name: pr_modifier
+              type: TEXT
+              nullable: false
+            - name: pr_unique_code
+              type: TEXT
+              nullable: false
+  employees_db:
+    schemas:
+      public:
+        tables:
+          departments:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,employees_db.public.departments,PROD)
+            description: Organizational departments within the bank
+            row_count: 12
+            column_count: 4
+            columns:
+            - name: department_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique department identifier
+              stats:
+                unique_count: 12
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - DEPT-694141F7
+                - DEPT-24F4B63D
+                - DEPT-89154FA4
+                - DEPT-DEFEF265
+            - name: department_name
+              type: VARCHAR(100)
+              nullable: false
+              description: Official department name
+              stats:
+                unique_count: 12
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - Retail Banking
+                - Lending
+                - Insurance
+                - Compliance & Risk
+            - name: department_head_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Employee ID of department head
+              foreign_key:
+                foreign_table: employees_db.public.employees
+                foreign_column: employee_id
+                constraint_name: departments_department_head_id_fkey
+              stats:
+                unique_count: 0
+                null_count: 12
+                null_proportion: 1.0
+                sample_values: []
+            - name: budget
+              type: NUMERIC(15, 2)
+              nullable: true
+              description: Annual department budget
+              stats:
+                unique_count: 12
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                min: '673898.54'
+                max: '4504760.52'
+                mean: '2478192.7191666667'
+                median: '2311248.18'
+                stdev: '1259679.3557'
+                sample_values:
+                - '1810011.61'
+                - '2361506.81'
+                - '673898.54'
+                - '4504760.52'
+          employee_assignments:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,employees_db.public.employee_assignments,PROD)
+            description: Employee assignments to customers, projects, or branches
+            row_count: 730
+            column_count: 6
+            columns:
+            - name: assignment_id
+              type: INTEGER
+              nullable: false
+              description: Auto-incrementing assignment identifier
+              stats:
+                unique_count: 730
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                min: '1195'
+                max: '1924'
+                mean: '1559.5'
+                median: '1559.5'
+                stdev: '210.877136424665'
+                sample_values:
+                - '1195'
+                - '1196'
+                - '1197'
+                - '1198'
+            - name: employee_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Employee assigned
+              foreign_key:
+                foreign_table: employees_db.public.employees
+                foreign_column: employee_id
+                constraint_name: employee_assignments_employee_id_fkey
+              stats:
+                unique_count: 116
+                unique_proportion: 0.1589041
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - EMP-BFAB1F4A
+                - EMP-C4D2896F
+                - EMP-D734E9D3
+                - EMP-397934DF
+            - name: assignment_type
+              type: VARCHAR(50)
+              nullable: false
+              description: 'Type: customer_portfolio, project, branch_coverage'
+              stats:
+                unique_count: 2
+                unique_proportion: 0.002739726
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - customer_portfolio
+                - customer_portfolio
+                - customer_portfolio
+                - customer_portfolio
+            - name: related_entity_id
+              type: VARCHAR(50)
+              nullable: true
+              description: ID of related entity (customer, project, branch)
+              stats:
+                unique_count: 728
+                unique_proportion: 0.9972603
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - CUST-8139E36FC9
+                - CUST-64355C33AD
+                - CUST-1BBD5C63B3
+                - CUST-CA0B1953E3
+            - name: start_date
+              type: DATE
+              nullable: false
+              description: Assignment start date
+              stats:
+                unique_count: 447
+                unique_proportion: 0.61232877
+                null_count: 0
+                null_proportion: 0.0
+                min: '2023-10-26'
+                max: '2025-09-25'
+                sample_values:
+                - '2025-06-28'
+                - '2025-07-25'
+                - '2023-10-29'
+                - '2025-03-20'
+            - name: end_date
+              type: DATE
+              nullable: true
+              description: Assignment end date, NULL if ongoing
+              stats:
+                unique_count: 95
+                unique_proportion: 0.88785046
+                null_count: 623
+                null_proportion: 0.85342467
+                min: '2024-02-09'
+                max: '2025-10-25'
+                sample_values:
+                - '2025-10-25'
+                - '2025-05-26'
+                - '2025-08-13'
+                - '2024-12-18'
+          employee_training:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,employees_db.public.employee_training,PROD)
+            description: Employee enrollment and completion in training programs
+            row_count: 478
+            column_count: 7
+            columns:
+            - name: training_record_id
+              type: INTEGER
+              nullable: false
+              description: Auto-incrementing training record identifier
+              stats:
+                unique_count: 478
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                min: '742'
+                max: '1219'
+                mean: '980.5'
+                median: '980.5'
+                stdev: '138.13097649212'
+                sample_values:
+                - '742'
+                - '743'
+                - '744'
+                - '745'
+            - name: employee_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Employee enrolled in training
+              foreign_key:
+                foreign_table: employees_db.public.employees
+                foreign_column: employee_id
+                constraint_name: employee_training_employee_id_fkey
+              stats:
+                unique_count: 150
+                unique_proportion: 0.31380752
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - EMP-9BC741E0
+                - EMP-9BC741E0
+                - EMP-9AB2F84D
+                - EMP-9AB2F84D
+            - name: program_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Training program enrolled in
+              foreign_key:
+                foreign_table: employees_db.public.training_programs
+                foreign_column: program_id
+                constraint_name: employee_training_program_id_fkey
+              stats:
+                unique_count: 16
+                unique_proportion: 0.033472802
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - PROG-A6EE48
+                - PROG-F0C328
+                - PROG-378461
+                - PROG-A6EE48
+            - name: enrollment_date
+              type: DATE
+              nullable: true
+              description: Date employee enrolled
+              stats:
+                unique_count: 357
+                unique_proportion: 0.74686193
+                null_count: 0
+                null_proportion: 0.0
+                min: '2023-10-26'
+                max: '2025-10-24'
+                sample_values:
+                - '2024-12-11'
+                - '2024-11-05'
+                - '2025-02-04'
+                - '2024-12-28'
+            - name: completion_date
+              type: DATE
+              nullable: true
+              description: Date employee completed training
+              stats:
+                unique_count: 297
+                unique_proportion: 0.8092643
+                null_count: 111
+                null_proportion: 0.23221758
+                min: '2023-11-22'
+                max: '2025-12-12'
+                sample_values:
+                - '2024-12-27'
+                - '2025-02-22'
+                - '2025-02-19'
+                - '2025-07-09'
+            - name: status
+              type: VARCHAR(50)
+              nullable: true
+              description: 'Status: enrolled, in_progress, completed, dropped'
+              stats:
+                unique_count: 3
+                unique_proportion: 0.0062761507
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - completed
+                - in_progress
+                - completed
+                - completed
+            - name: score
+              type: INTEGER
+              nullable: true
+              description: Final score or grade if applicable
+              stats:
+                unique_count: 36
+                unique_proportion: 0.098092645
+                null_count: 111
+                null_proportion: 0.23221758
+                min: '65'
+                max: '100'
+                mean: '82.10354223433242'
+                median: '82'
+                stdev: '10.778452674809223'
+                sample_values:
+                - '66'
+                - '97'
+                - '90'
+                - '90'
+          employees:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,employees_db.public.employees,PROD)
+            description: Bank employee records and employment details
+            row_count: 150
+            column_count: 15
+            columns:
+            - name: employee_id
+              type: VARCHAR(50)
+              nullable: false
+              description: System-generated unique employee identifier
+              stats:
+                unique_count: 150
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - EMP-9BC741E0
+                - EMP-9AB2F84D
+                - EMP-E027BB89
+                - EMP-EA8D473E
+            - name: employee_number
+              type: VARCHAR(20)
+              nullable: false
+              description: Human-readable employee number
+              stats:
+                unique_count: 150
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - E10000
+                - E10001
+                - E10002
+                - E10003
+            - name: first_name
+              type: VARCHAR(100)
+              nullable: false
+              description: Employee first name
+              stats:
+                unique_count: 114
+                unique_proportion: 0.76
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - Megan
+                - Anthony
+                - Lisa
+                - Kelsey
+            - name: last_name
+              type: VARCHAR(100)
+              nullable: false
+              description: Employee last name
+              stats:
+                unique_count: 118
+                unique_proportion: 0.7866667
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - Crawford
+                - Harris
+                - Jackson
+                - Brown
+            - name: email
+              type: VARCHAR(150)
+              nullable: true
+              description: Corporate email address
+              stats:
+                unique_count: 150
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - josephtucker@example.com
+                - umoon@example.com
+                - samuel39@example.net
+                - kimberlytran@example.com
+            - name: phone
+              type: VARCHAR(20)
+              nullable: true
+              description: Work phone number
+              stats:
+                unique_count: 150
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - 508-388-1634
+                - 788-149-5648
+                - 568-456-8108
+                - 599-607-1058
+            - name: role
+              type: VARCHAR(100)
+              nullable: false
+              description: Job title or position
+              stats:
+                unique_count: 9
+                unique_proportion: 0.06
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - IT Specialist
+                - Insurance Agent
+                - Branch Manager
+                - Customer Service Representative
+            - name: department
+              type: VARCHAR(100)
+              nullable: false
+              description: 'Department name: lending, operations, risk, customer_service'
+              stats:
+                unique_count: 9
+                unique_proportion: 0.06
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - Information Technology
+                - Insurance
+                - Retail Banking
+                - Customer Service
+            - name: branch_code
+              type: VARCHAR(10)
+              nullable: true
+              description: Branch location code where employee works
+              stats:
+                unique_count: 20
+                unique_proportion: 0.13333334
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - BR005
+                - BR019
+                - BR018
+                - BR006
+            - name: manager_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Employee ID of direct manager
+              foreign_key:
+                foreign_table: employees_db.public.employees
+                foreign_column: employee_id
+                constraint_name: employees_manager_id_fkey
+              stats:
+                unique_count: 63
+                unique_proportion: 0.5833333
+                null_count: 42
+                null_proportion: 0.28
+                sample_values:
+                - EMP-9BC741E0
+                - EMP-9BC741E0
+                - EMP-9BC741E0
+                - EMP-DE0541E3
+            - name: hire_date
+              type: DATE
+              nullable: false
+              description: Date employee was hired
+              stats:
+                unique_count: 146
+                unique_proportion: 0.97333336
+                null_count: 0
+                null_proportion: 0.0
+                min: '2015-10-31'
+                max: '2025-10-11'
+                sample_values:
+                - '2018-07-04'
+                - '2019-06-23'
+                - '2016-11-07'
+                - '2018-05-24'
+            - name: termination_date
+              type: DATE
+              nullable: true
+              description: Date employment ended, NULL if currently employed
+              stats:
+                unique_count: 2
+                unique_proportion: 1.0
+                null_count: 148
+                null_proportion: 0.9866667
+                min: '2022-04-25'
+                max: '2023-10-12'
+                sample_values:
+                - '2023-10-12'
+                - '2022-04-25'
+            - name: employment_status
+              type: VARCHAR(20)
+              nullable: true
+              description: 'Status: active, on_leave, terminated'
+              stats:
+                unique_count: 2
+                unique_proportion: 0.013333334
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - active
+                - active
+                - active
+                - active
+            - name: salary
+              type: NUMERIC(12, 2)
+              nullable: true
+              description: Annual salary amount
+              stats:
+                unique_count: 150
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                min: '35122.94'
+                max: '109876.46'
+                mean: '60337.91366666667'
+                median: '55420.985'
+                stdev: '17708.4902805'
+                sample_values:
+                - '109876.46'
+                - '60855.94'
+                - '109806.13'
+                - '46744.91'
+            - name: created_at
+              type: TIMESTAMP WITHOUT TIME ZONE
+              nullable: true
+              description: Record creation timestamp
+              stats:
+                unique_count: 1
+                unique_proportion: 0.006666667
+                null_count: 0
+                null_proportion: 0.0
+                min: '2025-10-26T11:10:31.175110'
+                max: '2025-10-26T11:10:31.175110'
+                sample_values:
+                - '2025-10-26 11:10:31.175110'
+                - '2025-10-26 11:10:31.175110'
+                - '2025-10-26 11:10:31.175110'
+                - '2025-10-26 11:10:31.175110'
+          performance_reviews:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,employees_db.public.performance_reviews,PROD)
+            description: Employee performance evaluation records
+            row_count: 298
+            column_count: 7
+            columns:
+            - name: review_id
+              type: INTEGER
+              nullable: false
+              description: Auto-incrementing review identifier
+              stats:
+                unique_count: 298
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                min: '471'
+                max: '768'
+                mean: '619.5'
+                median: '619.5'
+                stdev: '86.1694067907321'
+                sample_values:
+                - '471'
+                - '472'
+                - '473'
+                - '474'
+            - name: employee_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Employee being reviewed
+              foreign_key:
+                foreign_table: employees_db.public.employees
+                foreign_column: employee_id
+                constraint_name: performance_reviews_employee_id_fkey
+              stats:
+                unique_count: 150
+                unique_proportion: 0.5033557
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - EMP-9BC741E0
+                - EMP-9BC741E0
+                - EMP-9BC741E0
+                - EMP-9AB2F84D
+            - name: review_date
+              type: DATE
+              nullable: false
+              description: Date of the performance review
+              stats:
+                unique_count: 266
+                unique_proportion: 0.89261746
+                null_count: 0
+                null_proportion: 0.0
+                min: '2022-10-28'
+                max: '2025-10-25'
+                sample_values:
+                - '2023-09-26'
+                - '2024-02-14'
+                - '2025-10-17'
+                - '2024-03-06'
+            - name: reviewer_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Employee ID of the reviewer, typically manager
+              foreign_key:
+                foreign_table: employees_db.public.employees
+                foreign_column: employee_id
+                constraint_name: performance_reviews_reviewer_id_fkey
+              stats:
+                unique_count: 130
+                unique_proportion: 0.4362416
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - EMP-F82BC0DE
+                - EMP-9E70D5FB
+                - EMP-37EE71AF
+                - EMP-4A927826
+            - name: rating
+              type: INTEGER
+              nullable: true
+              description: 'Overall performance rating: 1-5 scale'
+              stats:
+                unique_count: 5
+                unique_proportion: 0.016778523
+                null_count: 0
+                null_proportion: 0.0
+                min: '1'
+                max: '5'
+                mean: '3.5738255033557045'
+                median: '4.0'
+                stdev: '0.8701480947644121'
+                sample_values:
+                - '3'
+                - '4'
+                - '5'
+                - '4'
+            - name: goals_met
+              type: INTEGER
+              nullable: true
+              description: Number or percentage of goals achieved
+              stats:
+                unique_count: 40
+                unique_proportion: 0.13422818
+                null_count: 0
+                null_proportion: 0.0
+                min: '60'
+                max: '100'
+                mean: '79.86577181208054'
+                median: '80.0'
+                stdev: '11.67671008859985'
+                sample_values:
+                - '76'
+                - '82'
+                - '67'
+                - '88'
+            - name: comments
+              type: TEXT
+              nullable: true
+              description: Detailed review comments
+              stats:
+                unique_count: 14
+                unique_proportion: 0.046979867
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - Solid contributor to the team.
+                - Shows good initiative and problem-solving skills.
+                - Outstanding contributions to the team and organization.
+                - Reliable team member with consistent results.
+          training_programs:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,employees_db.public.training_programs,PROD)
+            description: Available training and certification programs
+            row_count: 16
+            column_count: 5
+            columns:
+            - name: program_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique training program identifier
+              stats:
+                unique_count: 16
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - PROG-B91E7D
+                - PROG-5F3515
+                - PROG-B436C9
+                - PROG-378461
+            - name: program_name
+              type: VARCHAR(200)
+              nullable: false
+              description: Name of the training program
+              stats:
+                unique_count: 16
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - AML Training
+                - KYC Procedures
+                - Regulatory Updates
+                - Ethics Training
+            - name: description
+              type: TEXT
+              nullable: true
+              description: Detailed description of program content
+              stats:
+                unique_count: 16
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - For require reality huge threat beyond. Where manager cover join
+                  color discuss financial.
+                - Purpose standard fund lay yes beautiful. Student environmental various
+                  simple value office item. Including so value impact.
+                - Policy enough whole. Carry involve else make many remain water last.
+                  If get will however nor. Support enough determine movement tend
+                  heavy.
+                - 'Determine least walk indeed. Majority scene young.
+
+                  Argue skin live through environmental. Until spend tax attack detail
+                  keep recent.'
+            - name: duration_hours
+              type: INTEGER
+              nullable: true
+              description: Total program duration in hours
+              stats:
+                unique_count: 5
+                unique_proportion: 0.3125
+                null_count: 0
+                null_proportion: 0.0
+                min: '2'
+                max: '40'
+                mean: '20.0'
+                median: '24.0'
+                stdev: '16.362558887085275'
+                sample_values:
+                - '40'
+                - '4'
+                - '24'
+                - '40'
+            - name: certification
+              type: BOOLEAN
+              nullable: true
+              description: Whether program awards certification upon completion
+              stats:
+                unique_count: 1
+                unique_proportion: 0.0625
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - 'False'
+                - 'False'
+                - 'False'
+                - 'False'
+  insurance_db:
+    schemas:
+      public:
+        tables:
+          beneficiaries:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,insurance_db.public.beneficiaries,PROD)
+            description: Policy beneficiaries who receive benefits
+            columns:
+            - name: beneficiary_id
+              type: INTEGER
+              nullable: false
+              description: Auto-incrementing beneficiary identifier
+            - name: policy_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Policy to which beneficiary is linked
+              foreign_key:
+                foreign_table: insurance_db.public.policies
+                foreign_column: policy_id
+                constraint_name: beneficiaries_policy_id_fkey
+            - name: beneficiary_name
+              type: VARCHAR(200)
+              nullable: false
+              description: Full name of the beneficiary
+            - name: relationship
+              type: VARCHAR(50)
+              nullable: true
+              description: 'Relationship to policyholder: spouse, child, parent'
+            - name: percentage
+              type: INTEGER
+              nullable: true
+              description: Percentage of benefit allocated to this beneficiary
+            - name: contact_info
+              type: TEXT
+              nullable: true
+              description: Contact information for the beneficiary
+          claims:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,insurance_db.public.claims,PROD)
+            description: Insurance claims filed by policyholders
+            columns:
+            - name: claim_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique claim identifier
+            - name: policy_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Policy under which claim is filed
+              foreign_key:
+                foreign_table: insurance_db.public.policies
+                foreign_column: policy_id
+                constraint_name: claims_policy_id_fkey
+            - name: claim_number
+              type: VARCHAR(30)
+              nullable: false
+              description: Customer-facing claim reference number
+            - name: claim_type
+              type: VARCHAR(100)
+              nullable: false
+              description: 'Type: death, accident, property_damage, medical'
+            - name: claim_amount
+              type: NUMERIC(15, 2)
+              nullable: false
+              description: Total amount claimed
+            - name: claim_date
+              type: DATE
+              nullable: false
+              description: Date when claim was filed
+            - name: status
+              type: VARCHAR(50)
+              nullable: true
+              description: 'Status: submitted, under_review, approved, rejected, paid'
+            - name: approved_amount
+              type: NUMERIC(15, 2)
+              nullable: true
+              description: Amount approved for payment, may differ from claim_amount
+            - name: settlement_date
+              type: DATE
+              nullable: true
+              description: Date when claim was paid
+            - name: description
+              type: TEXT
+              nullable: true
+              description: Detailed description of the claim
+            - name: processed_by
+              type: VARCHAR(50)
+              nullable: true
+              description: Employee who processed the claim
+          policies:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,insurance_db.public.policies,PROD)
+            description: Insurance policies sold to customers
+            columns:
+            - name: policy_id
+              type: VARCHAR(50)
+              nullable: false
+              description: System-generated unique policy identifier
+            - name: policy_number
+              type: VARCHAR(30)
+              nullable: false
+              description: Customer-facing policy number
+            - name: customer_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Customer who owns the policy
+            - name: policy_type
+              type: VARCHAR(50)
+              nullable: false
+              description: 'Type: life, property, vehicle, health, travel'
+            - name: policy_status
+              type: VARCHAR(20)
+              nullable: true
+              description: 'Status: active, lapsed, cancelled, matured'
+            - name: coverage_amount
+              type: NUMERIC(15, 2)
+              nullable: false
+              description: Maximum benefit payable under policy
+            - name: premium_amount
+              type: NUMERIC(10, 2)
+              nullable: false
+              description: Regular premium payment amount
+            - name: premium_frequency
+              type: VARCHAR(20)
+              nullable: true
+              description: 'Payment frequency: monthly, quarterly, annual'
+            - name: start_date
+              type: DATE
+              nullable: false
+              description: Policy coverage start date
+            - name: end_date
+              type: DATE
+              nullable: true
+              description: Policy expiration or maturity date
+            - name: linked_account_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Bank account used for premium payments
+            - name: agent_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Employee who sold the policy
+            - name: created_at
+              type: TIMESTAMP WITHOUT TIME ZONE
+              nullable: true
+              description: Record creation timestamp
+          policy_events:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,insurance_db.public.policy_events,PROD)
+            description: Lifecycle events for insurance policies
+            columns:
+            - name: event_id
+              type: INTEGER
+              nullable: false
+              description: Auto-incrementing event identifier
+            - name: policy_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Policy associated with the event
+              foreign_key:
+                foreign_table: insurance_db.public.policies
+                foreign_column: policy_id
+                constraint_name: policy_events_policy_id_fkey
+            - name: event_type
+              type: VARCHAR(50)
+              nullable: false
+              description: 'Type: renewal, modification, cancellation, reinstatement'
+            - name: event_date
+              type: DATE
+              nullable: false
+              description: Date the event occurred
+            - name: description
+              type: TEXT
+              nullable: true
+              description: Details about the event
+            - name: performed_by
+              type: VARCHAR(50)
+              nullable: true
+              description: Employee who performed the action
+          premium_payments:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,insurance_db.public.premium_payments,PROD)
+            description: Premium payment transactions for policies
+            columns:
+            - name: payment_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique payment identifier
+            - name: policy_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Policy for which premium was paid
+              foreign_key:
+                foreign_table: insurance_db.public.policies
+                foreign_column: policy_id
+                constraint_name: premium_payments_policy_id_fkey
+            - name: payment_date
+              type: DATE
+              nullable: false
+              description: Date premium was received
+            - name: amount
+              type: NUMERIC(10, 2)
+              nullable: false
+              description: Premium amount paid
+            - name: payment_method
+              type: VARCHAR(50)
+              nullable: true
+              description: 'Method: auto_debit, check, wire_transfer, online'
+            - name: from_account_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Bank account from which payment was made
+            - name: payment_status
+              type: VARCHAR(20)
+              nullable: true
+              description: 'Status: completed, pending, failed, reversed'
+  loans_db:
+    schemas:
+      public:
+        tables:
+          collateral:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,loans_db.public.collateral,PROD)
+            description: Assets pledged as security for loans
+            row_count: 163
+            column_count: 7
+            columns:
+            - name: collateral_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique collateral identifier
+              stats:
+                unique_count: 163
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - COL-38C4C986B83D
+                - COL-90F3BF0F5B18
+                - COL-3848E20AC830
+                - COL-994E25F99689
+            - name: loan_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Loan secured by this collateral
+              foreign_key:
+                foreign_table: loans_db.public.loans
+                foreign_column: loan_id
+                constraint_name: collateral_loan_id_fkey
+              stats:
+                unique_count: 163
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - LOAN-7138F72F5386
+                - LOAN-614518BE2F31
+                - LOAN-10272DBCDEEB
+                - LOAN-EAF5C85D4210
+            - name: collateral_type
+              type: VARCHAR(100)
+              nullable: false
+              description: 'Type: property, vehicle, equipment, securities'
+              stats:
+                unique_count: 5
+                unique_proportion: 0.030674847
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - property
+                - property
+                - vehicle
+                - vehicle
+            - name: description
+              type: TEXT
+              nullable: true
+              description: Detailed description of the collateral
+              stats:
+                unique_count: 143
+                unique_proportion: 0.8773006
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - 096 Hall Knoll Apt. 955, Mercedesborough
+                - 423 Jesse Common Suite 872, Mcguireborough
+                - 2024 Brown Group SUV
+                - 2022 Morris Inc Sedan
+            - name: appraised_value
+              type: NUMERIC(15, 2)
+              nullable: false
+              description: Professional appraisal value
+              stats:
+                unique_count: 163
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                min: '22129.64'
+                max: '1069485.83'
+                mean: '313438.37932515336'
+                median: '227513.45'
+                stdev: '276167.15714865'
+                sample_values:
+                - '308881.98'
+                - '39340.15'
+                - '86407.89'
+                - '69829.95'
+            - name: appraisal_date
+              type: DATE
+              nullable: true
+              description: Date of last appraisal
+              stats:
+                unique_count: 152
+                unique_proportion: 0.9325153
+                null_count: 0
+                null_proportion: 0.0
+                min: '2023-09-27'
+                max: '2025-09-08'
+                sample_values:
+                - '2024-02-15'
+                - '2024-01-01'
+                - '2024-10-21'
+                - '2025-03-04'
+            - name: ltv_ratio
+              type: NUMERIC(5, 4)
+              nullable: true
+              description: Loan-to-Value ratio as decimal
+              stats:
+                unique_count: 157
+                unique_proportion: 0.9631902
+                null_count: 0
+                null_proportion: 0.0
+                min: '0.6688'
+                max: '0.9076'
+                mean: '0.7819552147239264'
+                median: '0.7845'
+                stdev: '0.06806838260376924'
+                sample_values:
+                - '0.8030'
+                - '0.6736'
+                - '0.8818'
+                - '0.7361'
+          loan_applications:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,loans_db.public.loan_applications,PROD)
+            description: Loan applications submitted by customers
+            row_count: 492
+            column_count: 10
+            columns:
+            - name: application_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique loan application identifier
+              stats:
+                unique_count: 492
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - LAPP-F8704BC04CEE
+                - LAPP-7C6AB8EA695B
+                - LAPP-F26976344A20
+                - LAPP-B8123BD07C2B
+            - name: customer_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Customer applying for the loan
+              structured_properties:
+                fk_target_table: accounts_db.public.customers
+                fk_target_column: customer_id
+                fk_cross_database: 'true'
+                fk_relationship_description: Links loan application to customer master
+                  record in accounts database
+              stats:
+                unique_count: 420
+                unique_proportion: 0.85365856
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - CUST-72BA00A6E4
+                - CUST-63EEDC793E
+                - CUST-A0E98532D4
+                - CUST-490F23CE14
+            - name: loan_type
+              type: VARCHAR(50)
+              nullable: false
+              description: 'Type: mortgage, personal, auto, business, education'
+              stats:
+                unique_count: 5
+                unique_proportion: 0.010162601
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - auto
+                - mortgage
+                - personal
+                - auto
+            - name: requested_amount
+              type: NUMERIC(15, 2)
+              nullable: false
+              description: Amount customer requested to borrow
+              stats:
+                unique_count: 492
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                min: '5065.84'
+                max: '797535.7'
+                mean: '198096.76632113822'
+                median: '68435.5'
+                stdev: '225790.60309784'
+                sample_values:
+                - '26554.57'
+                - '724227.79'
+                - '26728.65'
+                - '28635.54'
+            - name: application_date
+              type: DATE
+              nullable: false
+              description: Date application was submitted
+              stats:
+                unique_count: 363
+                unique_proportion: 0.7378049
+                null_count: 0
+                null_proportion: 0.0
+                min: '2023-10-26'
+                max: '2025-10-23'
+                sample_values:
+                - '2025-09-01'
+                - '2024-09-21'
+                - '2025-03-30'
+                - '2025-03-11'
+            - name: status
+              type: VARCHAR(50)
+              nullable: true
+              description: 'Status: pending, approved, rejected, withdrawn'
+              stats:
+                unique_count: 4
+                unique_proportion: 0.008130081
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - approved
+                - rejected
+                - approved
+                - approved
+            - name: officer_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Loan officer handling the application
+              structured_properties:
+                fk_target_table: employees_db.public.employees
+                fk_target_column: employee_id
+                fk_cross_database: 'true'
+                fk_relationship_description: Links to loan officer employee record
+              stats:
+                unique_count: 30
+                unique_proportion: 0.06097561
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - EMP-A5597F79
+                - EMP-6E2E04A2
+                - EMP-9E70D5FB
+                - EMP-D1079413
+            - name: decision_date
+              type: DATE
+              nullable: true
+              description: Date final decision was made
+              stats:
+                unique_count: 330
+                unique_proportion: 0.7728337
+                null_count: 65
+                null_proportion: 0.13211381
+                min: '2023-11-08'
+                max: '2025-11-10'
+                sample_values:
+                - '2025-09-21'
+                - '2024-10-03'
+                - '2025-04-14'
+                - '2025-03-18'
+            - name: approved_amount
+              type: NUMERIC(15, 2)
+              nullable: true
+              description: Amount approved, may differ from requested
+              stats:
+                unique_count: 321
+                unique_proportion: 1.0
+                null_count: 171
+                null_proportion: 0.34756097
+                min: '4146.23'
+                max: '786834.23'
+                mean: '177166.2386292835'
+                median: '62224.11'
+                stdev: '199810.83845318'
+                sample_values:
+                - '24946.33'
+                - '22173.45'
+                - '25880.53'
+                - '66186.63'
+            - name: rejection_reason
+              type: TEXT
+              nullable: true
+              description: Reason for rejection if applicable
+              stats:
+                unique_count: 6
+                unique_proportion: 0.056603774
+                null_count: 386
+                null_proportion: 0.7845529
+                sample_values:
+                - Insufficient collateral value
+                - Unstable employment history
+                - Insufficient collateral value
+                - Insufficient collateral value
+          loan_guarantors:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,loans_db.public.loan_guarantors,PROD)
+            description: Third-party guarantors for loans
+            row_count: 111
+            column_count: 6
+            columns:
+            - name: guarantor_id
+              type: INTEGER
+              nullable: false
+              description: Auto-incrementing guarantor identifier
+              stats:
+                unique_count: 111
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                min: '161'
+                max: '271'
+                mean: '216.0'
+                median: '216'
+                stdev: '32.18695387886216'
+                sample_values:
+                - '161'
+                - '162'
+                - '163'
+                - '164'
+            - name: loan_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Loan being guaranteed
+              foreign_key:
+                foreign_table: loans_db.public.loans
+                foreign_column: loan_id
+                constraint_name: loan_guarantors_loan_id_fkey
+              stats:
+                unique_count: 80
+                unique_proportion: 0.7207207
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - LOAN-AE34ABB78001
+                - LOAN-663246C6A0B7
+                - LOAN-663246C6A0B7
+                - LOAN-43B44A40EA30
+            - name: guarantor_name
+              type: VARCHAR(200)
+              nullable: false
+              description: Full name of guarantor
+              stats:
+                unique_count: 111
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - Andrew Simmons
+                - Kelly Mitchell
+                - Vanessa Rowe
+                - Stephanie Peterson
+            - name: relationship
+              type: VARCHAR(50)
+              nullable: true
+              description: Relationship to borrower
+              stats:
+                unique_count: 7
+                unique_proportion: 0.06306306
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - family_member
+                - business_partner
+                - business_partner
+                - spouse
+            - name: contact_info
+              type: TEXT
+              nullable: true
+              description: Guarantor contact information
+              stats:
+                unique_count: 111
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - ubrown@example.com, 7509052249
+                - williamsricky@example.net, 001-636-762-0308x479
+                - kathryn13@example.net, 001-668-903-3334x98865
+                - thomasjay@example.net, (742)908-8427x8800
+            - name: guarantee_amount
+              type: NUMERIC(15, 2)
+              nullable: true
+              description: Amount guaranteed by this guarantor
+              stats:
+                unique_count: 111
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                min: '6944.26'
+                max: '648502.98'
+                mean: '121920.40261261261'
+                median: '51573.37'
+                stdev: '142342.3750831'
+                sample_values:
+                - '273744.19'
+                - '13173.73'
+                - '20972.68'
+                - '28500.00'
+          loans:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,loans_db.public.loans,PROD)
+            description: Active and historical loan accounts
+            row_count: 321
+            column_count: 15
+            columns:
+            - name: loan_id
+              type: VARCHAR(50)
+              nullable: false
+              description: System-generated unique loan identifier
+              stats:
+                unique_count: 321
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - LOAN-C91C82F53939
+                - LOAN-89F81528353D
+                - LOAN-31B928A84356
+                - LOAN-7138F72F5386
+            - name: application_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Original application that led to this loan
+              foreign_key:
+                foreign_table: loans_db.public.loan_applications
+                foreign_column: application_id
+                constraint_name: loans_application_id_fkey
+              stats:
+                unique_count: 321
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - LAPP-F8704BC04CEE
+                - LAPP-F26976344A20
+                - LAPP-B8123BD07C2B
+                - LAPP-588379C181DB
+            - name: loan_number
+              type: VARCHAR(30)
+              nullable: false
+              description: Customer-facing loan account number
+              stats:
+                unique_count: 321
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - '9387870993'
+                - '4705390426'
+                - '7790603344'
+                - '8790309955'
+            - name: customer_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Customer who received the loan
+              structured_properties:
+                fk_target_table: accounts_db.public.customers
+                fk_target_column: customer_id
+                fk_cross_database: 'true'
+                fk_relationship_description: Links loan to customer master record
+                  in accounts database
+              stats:
+                unique_count: 275
+                unique_proportion: 0.8566978
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - CUST-DCDA9AF5C6
+                - CUST-F4F25FFADD
+                - CUST-D9C1CA5794
+                - CUST-6A5E46F3D5
+            - name: linked_account_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Bank account for disbursement and repayment
+              structured_properties:
+                fk_target_table: accounts_db.public.accounts
+                fk_target_column: account_id
+                fk_cross_database: 'true'
+                fk_relationship_description: Links to bank account used for loan disbursement
+                  and repayments
+              stats:
+                unique_count: 189
+                unique_proportion: 0.875
+                null_count: 105
+                null_proportion: 0.3271028
+                sample_values:
+                - ACC-86DC2B457444
+                - ACC-CC62BD0CF067
+                - ACC-FAFE08D5BEC2
+                - ACC-1B91C922B351
+            - name: loan_type
+              type: VARCHAR(50)
+              nullable: false
+              description: Type of loan product
+              stats:
+                unique_count: 5
+                unique_proportion: 0.015576324
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - personal
+                - personal
+                - education
+                - mortgage
+            - name: principal_amount
+              type: NUMERIC(15, 2)
+              nullable: false
+              description: Original loan amount disbursed
+              stats:
+                unique_count: 321
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                min: '6671.19'
+                max: '796264.36'
+                mean: '177221.82255451713'
+                median: '70833.11'
+                stdev: '203857.39917376'
+                sample_values:
+                - '67542.28'
+                - '35070.01'
+                - '23030.57'
+                - '248022.96'
+            - name: interest_rate
+              type: NUMERIC(5, 4)
+              nullable: false
+              description: Annual interest rate as decimal (e.g., 0.0525 for 5.25%)
+              stats:
+                unique_count: 272
+                unique_proportion: 0.847352
+                null_count: 0
+                null_proportion: 0.0
+                min: '0.033'
+                max: '0.1786'
+                mean: '0.07679221183800623'
+                median: '0.0686'
+                stdev: '0.031141283417755673'
+                sample_values:
+                - '0.1771'
+                - '0.1773'
+                - '0.0515'
+                - '0.0359'
+            - name: term_months
+              type: INTEGER
+              nullable: false
+              description: Loan term length in months
+              stats:
+                unique_count: 12
+                unique_proportion: 0.037383176
+                null_count: 0
+                null_proportion: 0.0
+                min: '12'
+                max: '360'
+                mean: '109.6822429906542'
+                median: '72'
+                stdev: '94.14622252089178'
+                sample_values:
+                - '24'
+                - '48'
+                - '180'
+                - '360'
+            - name: disbursement_date
+              type: DATE
+              nullable: false
+              description: Date loan funds were disbursed
+              stats:
+                unique_count: 254
+                unique_proportion: 0.7912772
+                null_count: 0
+                null_proportion: 0.0
+                min: '2023-10-26'
+                max: '2025-09-25'
+                sample_values:
+                - '2023-11-28'
+                - '2024-06-26'
+                - '2024-02-28'
+                - '2024-02-22'
+            - name: maturity_date
+              type: DATE
+              nullable: false
+              description: Final payment due date
+              stats:
+                unique_count: 309
+                unique_proportion: 0.9626168
+                null_count: 0
+                null_proportion: 0.0
+                min: '2024-11-22'
+                max: '2055-03-26'
+                sample_values:
+                - '2025-11-17'
+                - '2028-06-05'
+                - '2038-12-11'
+                - '2053-09-17'
+            - name: loan_status
+              type: VARCHAR(50)
+              nullable: true
+              description: 'Status: active, paid_off, defaulted, restructured'
+              stats:
+                unique_count: 4
+                unique_proportion: 0.012461059
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - active
+                - active
+                - active
+                - active
+            - name: outstanding_balance
+              type: NUMERIC(15, 2)
+              nullable: true
+              description: Current remaining balance to be paid
+              stats:
+                unique_count: 240
+                unique_proportion: 0.74766356
+                null_count: 0
+                null_proportion: 0.0
+                min: '0.0'
+                max: '768108.43'
+                mean: '122154.75725856698'
+                median: '37557.79'
+                stdev: '185744.03901511'
+                sample_values:
+                - '15113.86'
+                - '26163.33'
+                - '20795.20'
+                - '237369.95'
+            - name: default_status
+              type: BOOLEAN
+              nullable: true
+              description: Whether loan is currently in default
+              stats:
+                unique_count: 2
+                unique_proportion: 0.0062305294
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - 'False'
+                - 'False'
+                - 'False'
+                - 'False'
+            - name: approved_by
+              type: VARCHAR(50)
+              nullable: true
+              description: Employee who approved the loan
+              structured_properties:
+                fk_target_table: employees_db.public.employees
+                fk_target_column: employee_id
+                fk_cross_database: 'true'
+                fk_relationship_description: Links to approving officer employee record
+              stats:
+                unique_count: 30
+                unique_proportion: 0.093457945
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - EMP-2709088D
+                - EMP-28A454AA
+                - EMP-E00F32BC
+                - EMP-28A454AA
+          repayment_schedule:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,loans_db.public.repayment_schedule,PROD)
+            description: Scheduled loan repayment installments
+            row_count: 35208
+            column_count: 9
+            columns:
+            - name: schedule_id
+              type: INTEGER
+              nullable: false
+              description: Auto-incrementing schedule entry identifier
+              stats:
+                unique_count: 35208
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                min: '60145'
+                max: '95352'
+                mean: '77748.5'
+                median: '77748.5'
+                stdev: '10163.818475356593'
+                sample_values:
+                - '60145'
+                - '60146'
+                - '60147'
+                - '60148'
+            - name: loan_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Loan this schedule belongs to
+              foreign_key:
+                foreign_table: loans_db.public.loans
+                foreign_column: loan_id
+                constraint_name: repayment_schedule_loan_id_fkey
+              stats:
+                unique_count: 321
+                unique_proportion: 0.009117246
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - LOAN-C91C82F53939
+                - LOAN-C91C82F53939
+                - LOAN-C91C82F53939
+                - LOAN-C91C82F53939
+            - name: installment_number
+              type: INTEGER
+              nullable: false
+              description: Sequential installment number
+              stats:
+                unique_count: 360
+                unique_proportion: 0.010224949
+                null_count: 0
+                null_proportion: 0.0
+                min: '1'
+                max: '360'
+                mean: '95.62065439672801'
+                median: '66.0'
+                stdev: '85.0448406266215'
+                sample_values:
+                - '1'
+                - '2'
+                - '3'
+                - '4'
+            - name: due_date
+              type: DATE
+              nullable: false
+              description: Payment due date
+              stats:
+                unique_count: 8798
+                unique_proportion: 0.2498864
+                null_count: 0
+                null_proportion: 0.0
+                min: '2023-11-25'
+                max: '2055-03-26'
+                sample_values:
+                - '2023-12-28'
+                - '2024-01-27'
+                - '2024-02-26'
+                - '2024-03-27'
+            - name: principal_amount
+              type: NUMERIC(15, 2)
+              nullable: false
+              description: Principal portion of payment
+              stats:
+                unique_count: 33234
+                unique_proportion: 0.9439332
+                null_count: 0
+                null_proportion: 0.0
+                min: '59.93'
+                max: '14569.77'
+                mean: '1615.7749670529424'
+                median: '1064.035'
+                stdev: '1607.96386175209'
+                sample_values:
+                - '2365.72'
+                - '2400.63'
+                - '2436.06'
+                - '2472.01'
+            - name: interest_amount
+              type: NUMERIC(15, 2)
+              nullable: false
+              description: Interest portion of payment
+              stats:
+                unique_count: 31092
+                unique_proportion: 0.8830947
+                null_count: 0
+                null_proportion: 0.0
+                min: '0.36'
+                max: '4908.61'
+                mean: '789.9781859236538'
+                median: '450.58'
+                stdev: '819.897346696777'
+                sample_values:
+                - '996.81'
+                - '961.90'
+                - '926.47'
+                - '890.52'
+            - name: total_amount
+              type: NUMERIC(15, 2)
+              nullable: false
+              description: Total payment amount due
+              stats:
+                unique_count: 633
+                unique_proportion: 0.017978868
+                null_count: 0
+                null_proportion: 0.0
+                min: '93.03'
+                max: '14676.37'
+                mean: '2405.753152976596'
+                median: '1903.77'
+                stdev: '1995.52545139662'
+                sample_values:
+                - '3362.53'
+                - '3362.53'
+                - '3362.53'
+                - '3362.53'
+            - name: payment_date
+              type: DATE
+              nullable: true
+              description: Actual date payment was received
+              stats:
+                unique_count: 637
+                unique_proportion: 0.17645429
+                null_count: 31598
+                null_proportion: 0.8974665
+                min: '2023-11-22'
+                max: '2025-11-09'
+                sample_values:
+                - '2023-12-28'
+                - '2024-01-29'
+                - '2024-03-07'
+                - '2024-03-27'
+            - name: payment_status
+              type: VARCHAR(20)
+              nullable: true
+              description: 'Status: pending, paid, late, missed'
+              stats:
+                unique_count: 4
+                unique_proportion: 0.00011361054
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - paid
+                - paid
+                - late
+                - paid
+          risk_assessments:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,loans_db.public.risk_assessments,PROD)
+            description: Credit risk assessments for loans and applications
+            row_count: 620
+            column_count: 8
+            columns:
+            - name: assessment_id
+              type: INTEGER
+              nullable: false
+              description: Auto-incrementing assessment identifier
+              stats:
+                unique_count: 620
+                unique_proportion: 1.0
+                null_count: 0
+                null_proportion: 0.0
+                min: '1021'
+                max: '1640'
+                mean: '1330.5'
+                median: '1330.5'
+                stdev: '179.122862862338'
+                sample_values:
+                - '1021'
+                - '1022'
+                - '1023'
+                - '1024'
+            - name: loan_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Loan being assessed, NULL for applications
+              stats:
+                unique_count: 128
+                unique_proportion: 1.0
+                null_count: 492
+                null_proportion: 0.7935484
+                sample_values:
+                - LOAN-492438C77396
+                - LOAN-266EF01235FC
+                - LOAN-D3E9272A7092
+                - LOAN-1F1D8380EB70
+            - name: application_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Application being assessed, NULL for existing loans
+              stats:
+                unique_count: 492
+                unique_proportion: 1.0
+                null_count: 128
+                null_proportion: 0.20645161
+                sample_values:
+                - LAPP-F8704BC04CEE
+                - LAPP-7C6AB8EA695B
+                - LAPP-F26976344A20
+                - LAPP-B8123BD07C2B
+            - name: assessment_date
+              type: DATE
+              nullable: false
+              description: Date assessment was performed
+              stats:
+                unique_count: 386
+                unique_proportion: 0.62258065
+                null_count: 0
+                null_proportion: 0.0
+                min: '2023-10-26'
+                max: '2025-10-26'
+                sample_values:
+                - '2025-09-01'
+                - '2024-09-21'
+                - '2025-03-30'
+                - '2025-03-11'
+            - name: risk_score
+              type: INTEGER
+              nullable: true
+              description: 'Credit risk score: 0-1000 scale'
+              stats:
+                unique_count: 265
+                unique_proportion: 0.42741936
+                null_count: 0
+                null_proportion: 0.0
+                min: '447'
+                max: '850'
+                mean: '697.4983870967742'
+                median: '697.0'
+                stdev: '80.98851110594931'
+                sample_values:
+                - '773'
+                - '713'
+                - '782'
+                - '772'
+            - name: pd_probability
+              type: NUMERIC(5, 4)
+              nullable: true
+              description: Probability of Default as decimal
+              stats:
+                unique_count: 553
+                unique_proportion: 0.89193547
+                null_count: 0
+                null_proportion: 0.0
+                min: '0.0103'
+                max: '0.5638'
+                mean: '0.12536064516129033'
+                median: '0.10545'
+                stdev: '0.09368210743369296'
+                sample_values:
+                - '0.0477'
+                - '0.0992'
+                - '0.0475'
+                - '0.0202'
+            - name: credit_grade
+              type: VARCHAR(10)
+              nullable: true
+              description: 'Letter grade: AAA, AA, A, BBB, BB, B, CCC, etc.'
+              stats:
+                unique_count: 9
+                unique_proportion: 0.014516129
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - AA
+                - BB
+                - AAA
+                - A
+            - name: assessed_by
+              type: VARCHAR(50)
+              nullable: true
+              description: Employee or system that performed assessment
+              structured_properties:
+                fk_target_table: employees_db.public.employees
+                fk_target_column: employee_id
+                fk_cross_database: 'true'
+                fk_relationship_description: Links to risk assessment officer employee
+                  record
+              stats:
+                unique_count: 16
+                unique_proportion: 0.025806451
+                null_count: 0
+                null_proportion: 0.0
+                sample_values:
+                - EMP-01E7AFD7
+                - EMP-887C873C
+                - EMP-0AE0D5E7
+                - EMP-BBD8EF28
+
