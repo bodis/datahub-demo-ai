@@ -17,6 +17,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - datahub_network
 
 volumes:
   postgres_data:
+
+networks:
+  datahub_network:
+    external: true
+    name: datahub_network

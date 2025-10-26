@@ -1,7 +1,9 @@
 """DataHub metadata import commands."""
 
 import csv
+import json
 import requests
+import yaml
 from pathlib import Path
 from typing import Dict, List, Optional
 from urllib.parse import quote
@@ -20,6 +22,7 @@ from datahub.metadata.schema_classes import (
 )
 
 from dhub.config import config
+from dhub.db import get_db_connection
 
 app = typer.Typer(help="DataHub metadata import commands")
 console = Console()
@@ -733,3 +736,447 @@ def clear_command(
     console.print(table)
 
     console.print("\n[green]✓ Clear operation completed[/green]")
+
+
+# =============================================================================
+# Database Ingestion Commands
+# =============================================================================
+
+DATABASE_LIST = [
+    "employees_db",
+    "customer_db",
+    "accounts_db",
+    "insurance_db",
+    "loans_db",
+    "compliance_db",
+]
+
+
+def get_postgres_config(database: str) -> Dict[str, str]:
+    """Get PostgreSQL connection configuration for a specific database.
+
+    Args:
+        database: The database name to connect to
+
+    Returns:
+        Dictionary with connection parameters
+    """
+    return {
+        "host": config.POSTGRES_HOST,
+        "port": str(config.POSTGRES_PORT),
+        "database": database,
+        "username": config.POSTGRES_USER,
+        "password": config.POSTGRES_PASSWORD,
+    }
+
+
+def generate_ingestion_config(
+    database_name: str,
+    schema_name: str = "public",
+    pipeline_name: Optional[str] = None,
+    include_profiling: bool = True,
+    include_lineage: bool = True,
+    docker_mode: bool = False,
+) -> Dict:
+    """Generate DataHub ingestion configuration for a PostgreSQL database.
+
+    Args:
+        database_name: PostgreSQL database name to ingest
+        schema_name: Schema name within the database (default: 'public')
+        pipeline_name: Optional custom pipeline name
+        include_profiling: Enable table/column profiling
+        include_lineage: Enable view lineage detection
+        docker_mode: If True, use Docker container names instead of localhost
+
+    Returns:
+        Dictionary with ingestion configuration
+    """
+    pg_config = get_postgres_config(database_name)
+
+    if not pipeline_name:
+        pipeline_name = f"pg_local_{database_name}"
+
+    # Determine host based on mode
+    if docker_mode:
+        # Use Docker container name (for ingestion running inside DataHub)
+        pg_host = "postgres_db"  # The container_name from docker-compose
+        datahub_server = "http://datahub-gms:8080"  # Internal DataHub service name
+    else:
+        # Use localhost (for direct host-to-host connections, rarely used)
+        pg_host = pg_config['host']
+        datahub_server = config.get_datahub_url()
+
+    # Base configuration
+    config_dict = {
+        "pipeline_name": pipeline_name,
+        "source": {
+            "type": "postgres",
+            "config": {
+                "host_port": f"{pg_host}:{pg_config['port']}",
+                "database": pg_config["database"],
+                "username": pg_config["username"],
+                "password": pg_config["password"],
+                "include_tables": True,
+                "include_views": True,
+                "schema_pattern": {
+                    "allow": [schema_name],
+                },
+                "stateful_ingestion": {
+                    "enabled": True,
+                },
+            }
+        },
+        "sink": {
+            "type": "datahub-rest",
+            "config": {
+                "server": datahub_server,
+            }
+        }
+    }
+
+    # Add token if available
+    if config.DATAHUB_TOKEN:
+        config_dict["sink"]["config"]["token"] = config.DATAHUB_TOKEN
+
+    # Add profiling configuration
+    if include_profiling:
+        config_dict["source"]["config"]["profiling"] = {
+            "enabled": True,
+            "profile_table_level_only": False,
+            "turn_off_expensive_profiling_metrics": False,
+        }
+
+    # Add view lineage configuration
+    if include_lineage:
+        config_dict["source"]["config"]["include_view_lineage"] = True
+        config_dict["source"]["config"]["include_view_column_lineage"] = True
+
+    return config_dict
+
+
+@app.command("ingest-run")
+def ingest_run_command(
+    databases: Optional[List[str]] = typer.Option(
+        None,
+        "--database",
+        "-d",
+        help="Database(s) to ingest. Can be specified multiple times. If not specified, ingests all databases."
+    ),
+    schema: str = typer.Option(
+        "public",
+        "--schema",
+        "-s",
+        help="Schema name within each database (default: 'public')"
+    ),
+    profiling: bool = typer.Option(
+        True,
+        "--profiling/--no-profiling",
+        help="Enable/disable table profiling (statistics, row counts, etc.)"
+    ),
+    lineage: bool = typer.Option(
+        True,
+        "--lineage/--no-lineage",
+        help="Enable/disable view lineage detection"
+    ),
+    docker_mode: bool = typer.Option(
+        False,
+        "--docker-mode/--localhost-mode",
+        help="Use Docker container names or localhost (default)"
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Show configuration without executing ingestion"
+    ),
+):
+    """Run database metadata ingestion to DataHub using Python SDK.
+
+    This command uses DataHub's Python SDK to programmatically ingest
+    metadata from PostgreSQL databases into DataHub.
+
+    By default, uses localhost since the ingestion pipeline runs locally on
+    your host machine (not inside containers).
+
+    Examples:
+        # Ingest all databases (uses localhost - default)
+        dhub datahub ingest-run
+
+        # Ingest specific databases
+        dhub datahub ingest-run -d employees_db -d customer_db
+
+        # Ingest without profiling (faster)
+        dhub datahub ingest-run --no-profiling
+
+        # Show config without running
+        dhub datahub ingest-run --dry-run
+
+        # Use Docker container names (only if running inside a container)
+        dhub datahub ingest-run --docker-mode
+    """
+    console.print("[bold blue]DataHub Database Ingestion[/bold blue]\n")
+
+    # Determine which databases to ingest
+    databases_to_ingest = databases if databases else DATABASE_LIST
+
+    console.print(f"[cyan]Target databases:[/cyan] {', '.join(databases_to_ingest)}")
+    console.print(f"[cyan]Schema:[/cyan] {schema}")
+    console.print(f"[cyan]Connection mode:[/cyan] {'Docker network' if docker_mode else 'Localhost (host machine)'}")
+    console.print(f"[cyan]Profiling:[/cyan] {'enabled' if profiling else 'disabled'}")
+    console.print(f"[cyan]View lineage:[/cyan] {'enabled' if lineage else 'disabled'}\n")
+
+    # Verify databases exist
+    console.print("[dim]Verifying databases exist...[/dim]")
+    try:
+        import psycopg
+        from psycopg.rows import dict_row
+
+        # Connect to default postgres database to check which databases exist
+        conn_string = f"host={config.POSTGRES_HOST} port={config.POSTGRES_PORT} dbname=postgres user={config.POSTGRES_USER} password={config.POSTGRES_PASSWORD}"
+
+        with psycopg.connect(conn_string, row_factory=dict_row) as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT datname
+                    FROM pg_database
+                    WHERE datname = ANY(%s) AND datistemplate = false
+                """, (databases_to_ingest,))
+                existing_databases = [row["datname"] for row in cur.fetchall()]
+
+        if not existing_databases:
+            console.print("[red]Error: None of the specified databases exist[/red]")
+            raise typer.Exit(1)
+
+        missing_databases = set(databases_to_ingest) - set(existing_databases)
+        if missing_databases:
+            console.print(f"[yellow]Warning: Databases not found: {', '.join(missing_databases)}[/yellow]")
+
+        databases_to_ingest = existing_databases
+        console.print(f"[green]✓ Found {len(databases_to_ingest)} database(s)[/green]\n")
+
+    except Exception as e:
+        console.print(f"[red]Database connection error: {e}[/red]")
+        raise typer.Exit(1)
+
+    # Run ingestion for each database
+    success_count = 0
+    failed_count = 0
+
+    for database in databases_to_ingest:
+        console.print(f"[bold]{'─' * 60}[/bold]")
+        console.print(f"[bold cyan]Database: {database}[/bold cyan]\n")
+
+        # Generate configuration
+        config_dict = generate_ingestion_config(
+            database_name=database,
+            schema_name=schema,
+            include_profiling=profiling,
+            include_lineage=lineage,
+            docker_mode=docker_mode,
+        )
+
+        if dry_run:
+            console.print("[dim]Configuration:[/dim]")
+            console.print(json.dumps(config_dict, indent=2))
+            console.print()
+            continue
+
+        try:
+            # Import Pipeline here to avoid import errors if not needed
+            from datahub.ingestion.run.pipeline import Pipeline
+
+            # Create and run pipeline
+            console.print("[dim]Creating ingestion pipeline...[/dim]")
+            pipeline = Pipeline.create(config_dict)
+
+            console.print("[dim]Running ingestion (this may take a while)...[/dim]")
+            pipeline.run()
+            pipeline.raise_from_status()
+
+            console.print(f"[green]✓ Successfully ingested {database}[/green]\n")
+            success_count += 1
+
+        except Exception as e:
+            console.print(f"[red]✗ Failed to ingest {database}: {e}[/red]\n")
+            failed_count += 1
+
+    # Summary
+    if not dry_run:
+        console.print(f"[bold]{'─' * 60}[/bold]")
+        console.print("[bold]Ingestion Summary[/bold]\n")
+
+        table = Table(show_header=False)
+        table.add_row("Successful:", f"[green]{success_count}[/green]")
+        table.add_row("Failed:", f"[red]{failed_count}[/red]" if failed_count > 0 else "0")
+        console.print(table)
+
+        if success_count > 0:
+            console.print(f"\n[dim]View metadata: {config.DATAHUB_FRONTEND_URL}[/dim]")
+
+
+@app.command("ingest-generate-config")
+def ingest_generate_config_command(
+    databases: Optional[List[str]] = typer.Option(
+        None,
+        "--database",
+        "-d",
+        help="Database(s) to generate config for. Can be specified multiple times. If not specified, generates for all databases."
+    ),
+    schema: str = typer.Option(
+        "public",
+        "--schema",
+        "-s",
+        help="Schema name within each database (default: 'public')"
+    ),
+    output_dir: Path = typer.Option(
+        Path("ingest_configs"),
+        "--output-dir",
+        "-o",
+        help="Output directory for generated YAML files"
+    ),
+    profiling: bool = typer.Option(
+        True,
+        "--profiling/--no-profiling",
+        help="Include profiling in generated config"
+    ),
+    lineage: bool = typer.Option(
+        True,
+        "--lineage/--no-lineage",
+        help="Include lineage detection in generated config"
+    ),
+    docker_mode: bool = typer.Option(
+        True,
+        "--docker-mode/--localhost-mode",
+        help="Generate config for Docker network (default) or localhost"
+    ),
+):
+    """Generate DataHub ingestion YAML configuration files.
+
+    Creates YAML configuration files that can be used with the
+    'datahub ingest' CLI command for each database.
+
+    By default, generates configs for Docker network (using container names)
+    since most ingestion runs inside DataHub infrastructure.
+
+    Examples:
+        # Generate configs with Docker network (default)
+        dhub datahub ingest-generate-config
+
+        # Generate configs for localhost (rare)
+        dhub datahub ingest-generate-config --localhost-mode
+
+        # Generate configs for specific databases
+        dhub datahub ingest-generate-config -d employees_db -d customer_db
+
+        # Custom output directory
+        dhub datahub ingest-generate-config -o /path/to/configs
+    """
+    console.print("[bold blue]Generate DataHub Ingestion Configs[/bold blue]\n")
+
+    # Determine which databases to generate configs for
+    databases_to_generate = databases if databases else DATABASE_LIST
+
+    # Create output directory
+    output_dir.mkdir(parents=True, exist_ok=True)
+    console.print(f"[cyan]Output directory:[/cyan] {output_dir}")
+    console.print(f"[cyan]Databases:[/cyan] {', '.join(databases_to_generate)}")
+    console.print(f"[cyan]Schema:[/cyan] {schema}")
+    console.print(f"[cyan]Mode:[/cyan] {'Docker network' if docker_mode else 'Host (localhost)'}\n")
+
+    generated_files = []
+
+    for database in databases_to_generate:
+        # Generate configuration
+        config_dict = generate_ingestion_config(
+            database_name=database,
+            schema_name=schema,
+            include_profiling=profiling,
+            include_lineage=lineage,
+            docker_mode=docker_mode,
+        )
+
+        # Write to YAML file
+        suffix = "_localhost" if not docker_mode else ""
+        output_file = output_dir / f"ingest_{database}{suffix}.yml"
+
+        try:
+            with open(output_file, 'w') as f:
+                yaml.dump(config_dict, f, default_flow_style=False, sort_keys=False)
+
+            console.print(f"[green]✓[/green] Generated: {output_file}")
+            generated_files.append(output_file)
+
+        except Exception as e:
+            console.print(f"[red]✗[/red] Failed to generate {output_file}: {e}")
+
+    # Summary
+    console.print(f"\n[bold]Generated {len(generated_files)} configuration file(s)[/bold]")
+
+    if generated_files:
+        if docker_mode:
+            console.print("\n[dim]These configs use Docker container names (postgres_db, datahub-gms)[/dim]")
+            console.print("[dim]Use them for DataHub UI-based ingestion or when running inside containers[/dim]")
+        else:
+            console.print("\n[dim]To run ingestion with these files from your host, use:[/dim]")
+            console.print(f"[dim]  datahub ingest -c {generated_files[0]}[/dim]")
+
+
+@app.command("ingest-list-databases")
+def ingest_list_databases_command():
+    """List available PostgreSQL databases that can be ingested.
+
+    Shows all databases on the PostgreSQL server along with
+    their table counts and whether they're in the default ingestion list.
+    """
+    console.print("[bold blue]Available PostgreSQL Databases[/bold blue]\n")
+
+    try:
+        import psycopg
+        from psycopg.rows import dict_row
+
+        # Connect to default postgres database to list all databases
+        conn_string = f"host={config.POSTGRES_HOST} port={config.POSTGRES_PORT} dbname=postgres user={config.POSTGRES_USER} password={config.POSTGRES_PASSWORD}"
+
+        with psycopg.connect(conn_string, row_factory=dict_row) as conn:
+            with conn.cursor() as cur:
+                # Get all databases (excluding templates and system databases)
+                cur.execute("""
+                    SELECT
+                        d.datname AS database_name,
+                        pg_catalog.pg_database_size(d.datname) AS size_bytes,
+                        pg_catalog.pg_size_pretty(pg_catalog.pg_database_size(d.datname)) AS size
+                    FROM pg_catalog.pg_database d
+                    WHERE d.datistemplate = false
+                        AND d.datname NOT IN ('postgres')
+                    ORDER BY d.datname
+                """)
+
+                databases = cur.fetchall()
+
+        if not databases:
+            console.print("[yellow]No user databases found[/yellow]")
+            return
+
+        # Create table
+        table = Table(title=f"PostgreSQL Databases ({config.POSTGRES_HOST}:{config.POSTGRES_PORT})")
+        table.add_column("Database", style="cyan")
+        table.add_column("Size", justify="right", style="magenta")
+        table.add_column("Default Ingestion", justify="center")
+
+        for row in databases:
+            database_name = row["database_name"]
+            size = row["size"]
+            in_default = "✓" if database_name in DATABASE_LIST else ""
+
+            table.add_row(
+                database_name,
+                size,
+                f"[green]{in_default}[/green]" if in_default else ""
+            )
+
+        console.print(table)
+        console.print(f"\n[dim]Total databases: {len(databases)}[/dim]")
+        console.print(f"[dim]Default ingestion list: {', '.join(DATABASE_LIST)}[/dim]")
+
+    except Exception as e:
+        console.print(f"[red]Database connection error: {e}[/red]")
+        raise typer.Exit(1)

@@ -1,0 +1,25 @@
+pipeline_name: pg_local_compliance_db
+source:
+  type: postgres
+  config:
+    host_port: postgres_db:5432
+    database: compliance_db
+    username: postgres
+    password: postgres
+    include_tables: true
+    include_views: true
+    schema_pattern:
+      allow:
+      - public
+    stateful_ingestion:
+      enabled: true
+    profiling:
+      enabled: true
+      profile_table_level_only: false
+      turn_off_expensive_profiling_metrics: false
+    include_view_lineage: true
+    include_view_column_lineage: true
+sink:
+  type: datahub-rest
+  config:
+    server: http://datahub-gms:8080
