@@ -1,0 +1,55 @@
+# foreign_key_structured_properties.yaml
+# Define structured properties for FK relationships
+# These provide validation and searchability
+
+- id: fk_target_table
+  qualified_name: fk_target_table
+  type: string
+  cardinality: SINGLE
+  display_name: FK Target Table
+  description: "Fully qualified name of the table this FK references (database.schema.table)"
+  
+- id: fk_target_column
+  qualified_name: fk_target_column
+  type: string
+  cardinality: SINGLE
+  display_name: FK Target Column
+  description: "Column name in the target table"
+
+- id: fk_source_column
+  qualified_name: fk_source_column
+  type: string
+  cardinality: SINGLE
+  display_name: FK Source Column
+  description: "Column name in this table that references the target"
+
+- id: fk_join_condition
+  qualified_name: fk_join_condition
+  type: string
+  cardinality: SINGLE
+  display_name: FK JOIN Condition
+  description: "Ready-to-use SQL JOIN condition for AI agents"
+
+- id: fk_cross_database
+  qualified_name: fk_cross_database
+  type: string
+  cardinality: SINGLE
+  display_name: Cross-Database FK
+  description: "Whether this FK crosses database boundaries (true/false)"
+  allowed_values:
+    - value: "true"
+      description: "FK references table in different database"
+    - value: "false"
+      description: "FK references table in same database"
+
+- id: fk_constraint_name
+  qualified_name: fk_constraint_name
+  type: string
+  cardinality: SINGLE
+  display_name: FK Constraint Name
+  description: "Name of the foreign key constraint"
+
+# To apply these structured properties:
+# 1. Save this file as foreign_key_properties.yaml
+# 2. Run: datahub properties upsert -f foreign_key_properties.yaml
+# 3. Then assign to datasets programmatically

@@ -1,5 +1,10 @@
 """Main CLI application entry point."""
 
+import warnings
+
+# Suppress pydantic v2 deprecation warnings from DataHub SDK
+warnings.filterwarnings("ignore", category=UserWarning, module="pydantic._internal._config")
+
 import typer
 from rich.console import Console
 
