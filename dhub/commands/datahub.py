@@ -192,19 +192,18 @@ def import_domain(emitter: DatahubRestEmitter, domain: Dict[str, str]) -> bool:
         description = domain['description']
         parent_domain_id = domain['parent_domain_id']
 
-        # Create domain properties
-        domain_properties = DomainPropertiesClass(
-            name=name,
-            description=description,
-        )
-
-        # If there's a parent domain, set it
+        # Create domain properties with parent domain if specified
         if parent_domain_id:
-            # Note: Parent domain relationship is set via the parentDomain field
-            # However, DomainPropertiesClass doesn't have a parentDomain field in older versions
-            # We'll handle this by ensuring parents are created first (topological sort)
-            # The parent relationship can be set via a separate MCP if needed
-            pass
+            domain_properties = DomainPropertiesClass(
+                name=name,
+                description=description,
+                parentDomain=make_domain_urn(parent_domain_id),
+            )
+        else:
+            domain_properties = DomainPropertiesClass(
+                name=name,
+                description=description,
+            )
 
         # Create MCP
         mcp = MetadataChangeProposalWrapper(
@@ -216,29 +215,6 @@ def import_domain(emitter: DatahubRestEmitter, domain: Dict[str, str]) -> bool:
         )
 
         emitter.emit_mcp(mcp)
-
-        # Set parent domain if exists (using separate aspect)
-        if parent_domain_id:
-            try:
-                # Try to import the parent domain aspect
-                from datahub.metadata.schema_classes import ParentDomainsClass
-
-                parent_aspect = ParentDomainsClass(
-                    parents=[make_domain_urn(parent_domain_id)]
-                )
-
-                parent_mcp = MetadataChangeProposalWrapper(
-                    entityType="domain",
-                    changeType=ChangeTypeClass.UPSERT,
-                    entityUrn=make_domain_urn(domain_id),
-                    aspectName="parentDomains",
-                    aspect=parent_aspect,
-                )
-
-                emitter.emit_mcp(parent_mcp)
-            except ImportError:
-                # ParentDomainsClass not available, skip parent relationship
-                console.print(f"[yellow]Warning: Parent domain relationship not set for {domain_id} (ParentDomainsClass not available)[/yellow]")
 
         return True
     except Exception as e:
