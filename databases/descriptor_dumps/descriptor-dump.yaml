@@ -1,0 +1,196 @@
+databases:
+  accounts_db:
+    schemas:
+      public:
+        tables:
+          account_relationships:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,accounts_db.public.account_relationships,PROD)
+          accounts:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,accounts_db.public.accounts,PROD)
+          customers:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,accounts_db.public.customers,PROD)
+          transactions:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,accounts_db.public.transactions,PROD)
+  compliance_db:
+    schemas:
+      public:
+        tables:
+          aml_checks:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,compliance_db.public.aml_checks,PROD)
+          audit_trails:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,compliance_db.public.audit_trails,PROD)
+          compliance_rules:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,compliance_db.public.compliance_rules,PROD)
+          kyc_records:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,compliance_db.public.kyc_records,PROD)
+          regulatory_reports:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,compliance_db.public.regulatory_reports,PROD)
+          rule_violations:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,compliance_db.public.rule_violations,PROD)
+          suspicious_activity_reports:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,compliance_db.public.suspicious_activity_reports,PROD)
+  customer_db:
+    schemas:
+      public:
+        tables:
+          campaign_responses:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,customer_db.public.campaign_responses,PROD)
+          campaigns:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,customer_db.public.campaigns,PROD)
+          complaints:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,customer_db.public.complaints,PROD)
+          customer_profiles:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,customer_db.public.customer_profiles,PROD)
+          interactions:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,customer_db.public.interactions,PROD)
+          satisfaction_surveys:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,customer_db.public.satisfaction_surveys,PROD)
+  easylot:
+    schemas:
+      marketing:
+        tables:
+          campaign:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,easylot.marketing.campaign,PROD)
+          channel_dim:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,easylot.marketing.channel_dim,PROD)
+          spend_daily:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,easylot.marketing.spend_daily,PROD)
+          v_campaign_enriched:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,easylot.marketing.v_campaign_enriched,PROD)
+          v_campaign_kpi:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,easylot.marketing.v_campaign_kpi,PROD)
+          v_campaign_product_bridge:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,easylot.marketing.v_campaign_product_bridge,PROD)
+      product:
+        tables:
+          product:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,easylot.product.product,PROD)
+  employees_db:
+    schemas:
+      public:
+        tables:
+          departments:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,employees_db.public.departments,PROD)
+          employee_assignments:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,employees_db.public.employee_assignments,PROD)
+          employee_training:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,employees_db.public.employee_training,PROD)
+          employees:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,employees_db.public.employees,PROD)
+          performance_reviews:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,employees_db.public.performance_reviews,PROD)
+          training_programs:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,employees_db.public.training_programs,PROD)
+  insurance_db:
+    schemas:
+      public:
+        tables:
+          beneficiaries:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,insurance_db.public.beneficiaries,PROD)
+          claims:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,insurance_db.public.claims,PROD)
+          policies:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,insurance_db.public.policies,PROD)
+          policy_events:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,insurance_db.public.policy_events,PROD)
+          premium_payments:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,insurance_db.public.premium_payments,PROD)
+  loans_db:
+    schemas:
+      public:
+        tables:
+          collateral:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,loans_db.public.collateral,PROD)
+          loan_applications:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,loans_db.public.loan_applications,PROD)
+          loan_guarantors:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,loans_db.public.loan_guarantors,PROD)
+          loans:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,loans_db.public.loans,PROD)
+          repayment_schedule:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,loans_db.public.repayment_schedule,PROD)
+          risk_assessments:
+            platform: postgres
+            environment: PROD
+            urn: urn:li:dataset:(urn:li:dataPlatform:postgres,loans_db.public.risk_assessments,PROD)
+

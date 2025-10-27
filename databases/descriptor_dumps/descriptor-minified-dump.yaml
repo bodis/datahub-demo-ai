@@ -1,0 +1,1844 @@
+
+databases:
+  accounts_db:
+    schemas:
+      public:
+        tables:
+          account_relationships:
+            description: Relationships between accounts such as joint ownership
+            columns:
+            - name: relationship_id
+              type: INTEGER
+              nullable: false
+              description: Auto-incrementing identifier for the relationship
+            - name: primary_account_id
+              type: VARCHAR(50)
+              nullable: false
+              description: The main account in the relationship
+              foreign_key:
+                table: accounts_db.public.accounts
+                column: account_id
+            - name: related_account_id
+              type: VARCHAR(50)
+              nullable: false
+              description: The related or secondary account
+              foreign_key:
+                table: accounts_db.public.accounts
+                column: account_id
+            - name: relationship_type
+              type: VARCHAR(50)
+              nullable: false
+              description: 'Type: joint_owner, beneficiary, authorized_user'
+              sample_values:
+              - joint_owner
+              - authorized_user
+              - authorized_user
+              - beneficiary
+            - name: created_at
+              type: TIMESTAMP WITHOUT TIME ZONE
+              nullable: true
+              description: When the relationship was established
+          accounts:
+            description: Bank accounts owned by customers
+            columns:
+            - name: account_id
+              type: VARCHAR(50)
+              nullable: false
+              description: System-generated unique identifier for the account
+            - name: account_number
+              type: VARCHAR(20)
+              nullable: false
+              description: Customer-facing account number displayed on statements
+            - name: customer_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Reference to the customer who owns this account
+              foreign_key:
+                table: accounts_db.public.customers
+                column: customer_id
+            - name: account_type
+              type: VARCHAR(50)
+              nullable: false
+              description: 'Type of account: savings, checking, money_market'
+              sample_values:
+              - savings
+              - cd
+              - checking
+              - savings
+            - name: account_status
+              type: VARCHAR(20)
+              nullable: true
+              description: 'Current operational status: active, frozen, closed'
+              sample_values:
+              - active
+              - active
+              - closed
+              - active
+            - name: balance
+              type: NUMERIC(15, 2)
+              nullable: true
+              description: Current account balance in account currency
+            - name: currency
+              type: VARCHAR(3)
+              nullable: true
+              description: ISO currency code for the account
+              sample_values:
+              - USD
+              - USD
+              - CAD
+              - USD
+            - name: opened_date
+              type: DATE
+              nullable: false
+              description: Date when the account was officially opened
+            - name: closed_date
+              type: DATE
+              nullable: true
+              description: Date when the account was closed, NULL if still active
+            - name: branch_code
+              type: VARCHAR(10)
+              nullable: true
+              description: Code of the branch where account was opened
+          customers:
+            description: Core customer master data for account holders
+            columns:
+            - name: customer_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique identifier for customer across all banking systems
+            - name: first_name
+              type: VARCHAR(100)
+              nullable: false
+              description: Customer first name as per official documents
+            - name: last_name
+              type: VARCHAR(100)
+              nullable: false
+              description: Customer last name as per official documents
+            - name: date_of_birth
+              type: DATE
+              nullable: true
+              description: Customer date of birth for age verification and compliance
+            - name: email
+              type: VARCHAR(150)
+              nullable: true
+              description: Primary email address for customer communication
+            - name: phone
+              type: VARCHAR(20)
+              nullable: true
+              description: Primary phone number for customer contact
+            - name: created_at
+              type: TIMESTAMP WITHOUT TIME ZONE
+              nullable: true
+              description: Timestamp when customer record was created in the system
+          transactions:
+            description: Financial transactions on accounts
+            columns:
+            - name: transaction_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique identifier for each transaction
+            - name: account_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Reference to the account involved in the transaction
+              foreign_key:
+                table: accounts_db.public.accounts
+                column: account_id
+            - name: transaction_type
+              type: VARCHAR(50)
+              nullable: false
+              description: 'Type: deposit, withdrawal, transfer, payment, fee'
+              sample_values:
+              - withdrawal
+              - withdrawal
+              - payment
+              - salary
+            - name: transaction_amount
+              type: NUMERIC(15, 2)
+              nullable: false
+              description: Monetary amount of the transaction, positive for credits
+            - name: transaction_date
+              type: TIMESTAMP WITHOUT TIME ZONE
+              nullable: true
+              description: Timestamp when transaction was processed
+            - name: description
+              type: TEXT
+              nullable: true
+              description: Human-readable description or memo for the transaction
+            - name: balance_after
+              type: NUMERIC(15, 2)
+              nullable: true
+              description: Account balance after this transaction was applied
+            - name: counterparty_account
+              type: VARCHAR(20)
+              nullable: true
+              description: Account number of the other party in transfers
+            - name: processed_by
+              type: VARCHAR(50)
+              nullable: true
+              description: Employee ID who processed the transaction, NULL for automated
+  compliance_db:
+    schemas:
+      public:
+        tables:
+          aml_checks:
+            description: Anti-Money Laundering screening checks
+            columns:
+            - name: check_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique AML check identifier
+            - name: customer_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Customer being screened
+            - name: transaction_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Transaction being screened if applicable
+            - name: check_date
+              type: TIMESTAMP WITHOUT TIME ZONE
+              nullable: true
+              description: When check was performed
+            - name: check_type
+              type: VARCHAR(50)
+              nullable: false
+              description: 'Type: watchlist, sanctions, pep_screening, transaction_monitoring'
+            - name: aml_flag
+              type: BOOLEAN
+              nullable: true
+              description: Whether check raised a concern
+            - name: risk_level
+              type: VARCHAR(20)
+              nullable: true
+              description: 'Risk level identified: low, medium, high'
+            - name: screening_result
+              type: TEXT
+              nullable: true
+              description: Detailed results of the screening
+            - name: reviewed_by
+              type: VARCHAR(50)
+              nullable: true
+              description: Compliance officer who reviewed results
+          audit_trails:
+            description: System audit log for all critical actions
+            columns:
+            - name: audit_id
+              type: BIGINT
+              nullable: false
+              description: Auto-incrementing audit record identifier
+            - name: entity_type
+              type: VARCHAR(50)
+              nullable: false
+              description: 'Type of entity: account, customer, loan, transaction'
+            - name: entity_id
+              type: VARCHAR(50)
+              nullable: false
+              description: ID of the entity being audited
+            - name: action
+              type: VARCHAR(50)
+              nullable: false
+              description: 'Action performed: create, update, delete, view'
+            - name: performed_by
+              type: VARCHAR(50)
+              nullable: false
+              description: Employee who performed the action
+            - name: performed_at
+              type: TIMESTAMP WITHOUT TIME ZONE
+              nullable: true
+              description: Timestamp of the action
+            - name: old_value
+              type: TEXT
+              nullable: true
+              description: Previous value before change
+            - name: new_value
+              type: TEXT
+              nullable: true
+              description: New value after change
+            - name: ip_address
+              type: VARCHAR(45)
+              nullable: true
+              description: IP address from which action was performed
+          compliance_rules:
+            description: Automated compliance rules and thresholds
+            columns:
+            - name: rule_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique compliance rule identifier
+            - name: rule_name
+              type: VARCHAR(200)
+              nullable: false
+              description: Descriptive name of the rule
+            - name: rule_type
+              type: VARCHAR(50)
+              nullable: false
+              description: 'Type: transaction_limit, velocity_check, geographic_restriction'
+            - name: description
+              type: TEXT
+              nullable: true
+              description: Detailed description of the rule
+            - name: threshold_value
+              type: NUMERIC(15, 2)
+              nullable: true
+              description: Numeric threshold that triggers the rule
+            - name: is_active
+              type: BOOLEAN
+              nullable: true
+              description: Whether rule is currently enforced
+            - name: created_date
+              type: DATE
+              nullable: false
+              description: Date rule was created
+          kyc_records:
+            description: Know Your Customer verification records
+            columns:
+            - name: kyc_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique KYC record identifier
+            - name: customer_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Customer being verified
+            - name: verification_date
+              type: DATE
+              nullable: false
+              description: Date verification was completed
+            - name: kyc_status
+              type: VARCHAR(20)
+              nullable: false
+              description: 'Status: verified, pending, expired, rejected'
+            - name: document_type
+              type: VARCHAR(100)
+              nullable: true
+              description: 'Type of ID document: passport, drivers_license, national_id'
+            - name: document_number
+              type: VARCHAR(100)
+              nullable: true
+              description: Identification document number
+            - name: expiry_date
+              type: DATE
+              nullable: true
+              description: Document expiration date
+            - name: verified_by
+              type: VARCHAR(50)
+              nullable: true
+              description: Employee who verified the documents
+            - name: next_review_date
+              type: DATE
+              nullable: true
+              description: Date when KYC needs to be refreshed
+            - name: risk_rating
+              type: VARCHAR(20)
+              nullable: true
+              description: 'Customer risk level: low, medium, high'
+          regulatory_reports:
+            description: Regulatory compliance reports submitted to authorities
+            columns:
+            - name: report_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique regulatory report identifier
+            - name: report_type
+              type: VARCHAR(100)
+              nullable: false
+              description: 'Type: capital_adequacy, liquidity, stress_test, quarterly_filing'
+            - name: reporting_period_start
+              type: DATE
+              nullable: false
+              description: Start of reporting period
+            - name: reporting_period_end
+              type: DATE
+              nullable: false
+              description: End of reporting period
+            - name: submission_date
+              type: DATE
+              nullable: true
+              description: Date submitted to regulator
+            - name: status
+              type: VARCHAR(50)
+              nullable: true
+              description: 'Status: pending, submitted, accepted, rejected'
+            - name: prepared_by
+              type: VARCHAR(50)
+              nullable: true
+              description: Employee who prepared the report
+            - name: approved_by
+              type: VARCHAR(50)
+              nullable: true
+              description: Senior officer who approved submission
+          rule_violations:
+            description: Compliance rule violations and their resolution
+            columns:
+            - name: violation_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique violation identifier
+            - name: rule_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Rule that was violated
+              foreign_key:
+                table: compliance_db.public.compliance_rules
+                column: rule_id
+            - name: entity_type
+              type: VARCHAR(50)
+              nullable: false
+              description: 'Type of entity that violated: transaction, account, customer'
+            - name: entity_id
+              type: VARCHAR(50)
+              nullable: false
+              description: ID of the entity that violated
+            - name: violation_date
+              type: TIMESTAMP WITHOUT TIME ZONE
+              nullable: true
+              description: When violation occurred
+            - name: severity
+              type: VARCHAR(20)
+              nullable: true
+              description: 'Severity: low, medium, high, critical'
+            - name: status
+              type: VARCHAR(50)
+              nullable: true
+              description: 'Status: open, investigating, resolved, false_positive'
+            - name: resolution_notes
+              type: TEXT
+              nullable: true
+              description: Notes about how violation was resolved
+            - name: resolved_by
+              type: VARCHAR(50)
+              nullable: true
+              description: Employee who resolved the violation
+            - name: resolved_date
+              type: DATE
+              nullable: true
+              description: Date violation was resolved
+          suspicious_activity_reports:
+            description: Suspicious Activity Reports filed with regulators
+            columns:
+            - name: sar_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique SAR identifier
+            - name: customer_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Customer involved in suspicious activity
+            - name: account_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Account involved if applicable
+            - name: report_date
+              type: DATE
+              nullable: false
+              description: Date SAR was created
+            - name: activity_type
+              type: VARCHAR(100)
+              nullable: false
+              description: 'Type: structuring, unusual_pattern, high_risk_country'
+            - name: description
+              type: TEXT
+              nullable: false
+              description: Detailed description of suspicious activity
+            - name: sar_status
+              type: VARCHAR(50)
+              nullable: true
+              description: 'Status: draft, filed, under_review, closed'
+            - name: filed_date
+              type: DATE
+              nullable: true
+              description: Date filed with regulator
+            - name: regulatory_tier
+              type: VARCHAR(20)
+              nullable: true
+              description: Classification tier for regulatory purposes
+            - name: filed_by
+              type: VARCHAR(50)
+              nullable: true
+              description: Compliance officer who filed the SAR
+            - name: amount_involved
+              type: NUMERIC(15, 2)
+              nullable: true
+              description: Total monetary amount involved
+  customer_db:
+    schemas:
+      public:
+        tables:
+          campaign_responses:
+            description: Customer responses to marketing campaigns
+            columns:
+            - name: response_id
+              type: INTEGER
+              nullable: false
+              description: Auto-incrementing response identifier
+            - name: campaign_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Campaign that generated the response
+              foreign_key:
+                table: customer_db.public.campaigns
+                column: campaign_id
+            - name: customer_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Customer who responded
+              foreign_key:
+                table: customer_db.public.customer_profiles
+                column: customer_id
+            - name: response_date
+              type: DATE
+              nullable: true
+              description: When customer responded
+            - name: response_type
+              type: VARCHAR(50)
+              nullable: true
+              description: 'Type: clicked, opened, unsubscribed, purchased'
+              sample_values:
+              - unsubscribed
+              - opened
+              - purchased
+              - unsubscribed
+            - name: converted
+              type: BOOLEAN
+              nullable: true
+              description: Whether response resulted in conversion
+              sample_values:
+              - 'False'
+              - 'False'
+              - 'False'
+              - 'False'
+          campaigns:
+            description: Marketing campaigns targeting customers
+            columns:
+            - name: campaign_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique campaign identifier
+            - name: campaign_name
+              type: VARCHAR(200)
+              nullable: false
+              description: Descriptive name of the marketing campaign
+            - name: campaign_type
+              type: VARCHAR(50)
+              nullable: true
+              description: 'Type: email, direct_mail, digital, cross_sell'
+              sample_values:
+              - cross_sell
+              - cross_sell
+              - digital
+              - email
+            - name: start_date
+              type: DATE
+              nullable: true
+              description: Campaign start date
+            - name: end_date
+              type: DATE
+              nullable: true
+              description: Campaign end date
+            - name: target_segment
+              type: VARCHAR(50)
+              nullable: true
+              description: Customer segment targeted by campaign
+              sample_values:
+              - corporate
+              - all
+              - corporate
+              - all
+          complaints:
+            description: Customer complaints and their resolution tracking
+            columns:
+            - name: complaint_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique complaint identifier
+            - name: customer_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Customer who filed the complaint
+              foreign_key:
+                table: customer_db.public.customer_profiles
+                column: customer_id
+            - name: complaint_type
+              type: VARCHAR(100)
+              nullable: false
+              description: 'Category: service, fee, product, fraud, other'
+              sample_values:
+              - product
+              - product
+              - other
+              - other
+            - name: description
+              type: TEXT
+              nullable: true
+              description: Detailed description of the complaint
+            - name: status
+              type: VARCHAR(50)
+              nullable: true
+              description: 'Current status: open, investigating, resolved, closed'
+              sample_values:
+              - resolved
+              - investigating
+              - closed
+              - resolved
+            - name: priority
+              type: VARCHAR(20)
+              nullable: true
+              description: 'Priority level: low, medium, high, critical'
+              sample_values:
+              - low
+              - medium
+              - critical
+              - medium
+            - name: filed_date
+              type: TIMESTAMP WITHOUT TIME ZONE
+              nullable: true
+              description: When complaint was filed
+            - name: resolved_date
+              type: TIMESTAMP WITHOUT TIME ZONE
+              nullable: true
+              description: When complaint was resolved, NULL if still open
+            - name: resolution_time_hours
+              type: INTEGER
+              nullable: true
+              description: Time taken to resolve in hours
+            - name: assigned_to
+              type: VARCHAR(50)
+              nullable: true
+              description: Employee ID responsible for resolution
+              cross_db_reference:
+                table: employees_db.public.employees
+                column: employee_id
+                description: Links to employee assigned to resolve complaint
+          customer_profiles:
+            description: Customer relationship management profiles
+            columns:
+            - name: customer_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique customer identifier matching across all systems
+            - name: full_name
+              type: VARCHAR(200)
+              nullable: false
+              description: Complete name of the customer
+            - name: email
+              type: VARCHAR(150)
+              nullable: true
+              description: Primary email for communications and alerts
+            - name: phone
+              type: VARCHAR(20)
+              nullable: true
+              description: Primary contact phone number
+            - name: address
+              type: TEXT
+              nullable: true
+              description: Full residential address
+            - name: city
+              type: VARCHAR(100)
+              nullable: true
+              description: City of residence
+            - name: country
+              type: VARCHAR(100)
+              nullable: true
+              description: Country of residence
+              sample_values:
+              - USA
+              - USA
+              - USA
+              - USA
+            - name: customer_segment
+              type: VARCHAR(50)
+              nullable: true
+              description: 'Classification: retail, premium, corporate, private_banking'
+              sample_values:
+              - corporate
+              - retail
+              - retail
+              - retail
+            - name: customer_status
+              type: VARCHAR(20)
+              nullable: true
+              description: 'Lifecycle status: active, dormant, closed'
+              sample_values:
+              - active
+              - active
+              - active
+              - active
+            - name: onboarding_date
+              type: DATE
+              nullable: false
+              description: Date when customer relationship was established
+            - name: assigned_agent_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Employee ID of the assigned relationship manager
+              cross_db_reference:
+                table: employees_db.public.employees
+                column: employee_id
+                description: Links to relationship manager employee record
+            - name: kyc_status
+              type: VARCHAR(20)
+              nullable: true
+              description: Know Your Customer verification status
+              sample_values:
+              - verified
+              - verified
+              - verified
+              - verified
+            - name: risk_rating
+              type: VARCHAR(20)
+              nullable: true
+              description: 'Overall customer risk level: low, medium, high'
+              sample_values:
+              - low
+              - low
+              - medium
+              - low
+            - name: created_at
+              type: TIMESTAMP WITHOUT TIME ZONE
+              nullable: true
+              description: Record creation timestamp
+            - name: updated_at
+              type: TIMESTAMP WITHOUT TIME ZONE
+              nullable: true
+              description: Last update timestamp
+          interactions:
+            description: Customer interactions across all channels
+            columns:
+            - name: interaction_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique identifier for each customer interaction
+            - name: customer_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Reference to customer who had the interaction
+              foreign_key:
+                table: customer_db.public.customer_profiles
+                column: customer_id
+            - name: interaction_type
+              type: VARCHAR(50)
+              nullable: false
+              description: 'Type: call, email, chat, branch_visit, complaint'
+              sample_values:
+              - support
+              - inquiry
+              - support
+              - inquiry
+            - name: channel
+              type: VARCHAR(50)
+              nullable: true
+              description: 'Channel used: phone, email, web, mobile_app, branch'
+              sample_values:
+              - web
+              - email
+              - email
+              - phone
+            - name: interaction_date
+              type: TIMESTAMP WITHOUT TIME ZONE
+              nullable: true
+              description: When the interaction occurred
+            - name: duration_minutes
+              type: INTEGER
+              nullable: true
+              description: Length of interaction in minutes
+            - name: notes
+              type: TEXT
+              nullable: true
+              description: Detailed notes about the interaction
+            - name: handled_by
+              type: VARCHAR(50)
+              nullable: true
+              description: Employee ID who handled the interaction
+              cross_db_reference:
+                table: employees_db.public.employees
+                column: employee_id
+                description: Links to customer service employee who handled the interaction
+            - name: outcome
+              type: VARCHAR(50)
+              nullable: true
+              description: 'Result: resolved, escalated, follow_up_needed'
+              sample_values:
+              - resolved
+              - resolved
+              - resolved
+              - resolved
+          satisfaction_surveys:
+            description: Customer satisfaction and NPS survey responses
+            columns:
+            - name: survey_id
+              type: INTEGER
+              nullable: false
+              description: Auto-incrementing survey identifier
+            - name: customer_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Customer who completed the survey
+              foreign_key:
+                table: customer_db.public.customer_profiles
+                column: customer_id
+            - name: interaction_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Related interaction if survey is interaction-specific
+              foreign_key:
+                table: customer_db.public.interactions
+                column: interaction_id
+            - name: nps_score
+              type: INTEGER
+              nullable: true
+              description: 'Net Promoter Score: 0-10 scale'
+            - name: satisfaction_rating
+              type: INTEGER
+              nullable: true
+              description: 'Overall satisfaction: 1-5 stars'
+              sample_values:
+              - '4'
+              - '4'
+              - '4'
+              - '1'
+            - name: survey_date
+              type: DATE
+              nullable: false
+              description: Date survey was completed
+            - name: comments
+              type: TEXT
+              nullable: true
+              description: Free-text customer feedback
+  easylot:
+    schemas:
+      marketing:
+        tables:
+          campaign:
+            description: 'Marketing campaigns master. Relationship: product.pr_id
+              -> campaign.product_pr_id'
+            columns:
+            - name: campaign_id
+              type: INTEGER
+              nullable: false
+              sample_values:
+              - '1'
+              - '2'
+              - '3'
+              - '4'
+            - name: product_pr_id
+              type: UUID
+              nullable: false
+              description: 'FK: public.product.pr_id (UUID)'
+              foreign_key:
+                table: easylot.marketing.product
+                column: pr_id
+              sample_values:
+              - 0005db09-d466-408d-8eee-474b822cd53c
+              - 000f08bc-db47-4bb4-a1c0-8116a2701043
+              - 0010d90e-35ac-4eda-9856-31c8049e8ce4
+              - 00124eb6-a8bb-4086-a7b9-a710e4cd1238
+            - name: channel_id
+              type: SMALLINT
+              nullable: false
+              foreign_key:
+                table: easylot.marketing.channel_dim
+                column: channel_id
+              sample_values:
+              - '3'
+              - '4'
+              - '1'
+              - '4'
+            - name: start_date
+              type: DATE
+              nullable: false
+              sample_values:
+              - '2025-10-05'
+              - '2025-10-13'
+              - '2025-09-30'
+              - '2025-10-04'
+            - name: end_date
+              type: DATE
+              nullable: true
+              sample_values:
+              - '2025-12-11'
+              - '2025-11-13'
+              - '2025-11-27'
+              - '2025-12-08'
+            - name: budget_huf
+              type: NUMERIC(14, 2)
+              nullable: true
+              sample_values:
+              - '781652.00'
+              - '1058730.00'
+              - '1651448.00'
+              - '991630.00'
+            - name: target_cpc_huf
+              type: NUMERIC(12, 4)
+              nullable: true
+              sample_values:
+              - '82.0000'
+              - '35.0000'
+              - '56.0000'
+              - '34.0000'
+            - name: note
+              type: TEXT
+              nullable: true
+              sample_values:
+              - demo autogen
+              - demo autogen
+              - demo autogen
+              - demo autogen
+          channel_dim:
+            description: Advertising channels dimension table
+            columns:
+            - name: channel_id
+              type: SMALLINT
+              nullable: false
+              sample_values:
+              - '1'
+              - '2'
+              - '4'
+              - '3'
+            - name: channel_name
+              type: TEXT
+              nullable: false
+              sample_values:
+              - Google
+              - Facebook
+              - Email
+              - TikTok
+          spend_daily:
+            description: Daily spending and performance (impressions, clicks, spend_huf)
+            columns:
+            - name: day
+              type: DATE
+              nullable: false
+            - name: campaign_id
+              type: INTEGER
+              nullable: false
+              foreign_key:
+                table: easylot.marketing.campaign
+                column: campaign_id
+              sample_values:
+              - '1'
+              - '2'
+              - '3'
+              - '4'
+            - name: impressions
+              type: BIGINT
+              nullable: true
+            - name: clicks
+              type: BIGINT
+              nullable: true
+            - name: spend_huf
+              type: NUMERIC(14, 2)
+              nullable: true
+          v_campaign_enriched:
+            description: 'Enriched view: campaign × product × channel_dim (product
+              name, brand, channel)'
+            columns:
+            - name: campaign_id
+              type: INTEGER
+              nullable: true
+            - name: product_pr_id
+              type: UUID
+              nullable: true
+            - name: product_name
+              type: TEXT
+              nullable: true
+            - name: product_brand
+              type: TEXT
+              nullable: true
+            - name: channel_id
+              type: SMALLINT
+              nullable: true
+            - name: channel_name
+              type: TEXT
+              nullable: true
+            - name: start_date
+              type: DATE
+              nullable: true
+            - name: end_date
+              type: DATE
+              nullable: true
+            - name: budget_huf
+              type: NUMERIC(14, 2)
+              nullable: true
+          v_campaign_kpi:
+            description: 'KPI view: CTR, CPC and daily spending per campaign'
+            columns:
+            - name: day
+              type: DATE
+              nullable: true
+            - name: campaign_id
+              type: INTEGER
+              nullable: true
+            - name: pr_name
+              type: TEXT
+              nullable: true
+            - name: impressions
+              type: BIGINT
+              nullable: true
+            - name: clicks
+              type: BIGINT
+              nullable: true
+            - name: spend_huf
+              type: NUMERIC(14, 2)
+              nullable: true
+            - name: cpc_huf
+              type: NUMERIC
+              nullable: true
+          v_campaign_product_bridge:
+            description: 'Bridge view: campaign × product -> (campaign_id, product_pr_id,
+              pr_name)'
+            columns:
+            - name: campaign_id
+              type: INTEGER
+              nullable: true
+            - name: product_pr_id
+              type: UUID
+              nullable: true
+            - name: pr_name
+              type: TEXT
+              nullable: true
+      product:
+        tables:
+          product:
+            description: 'Product master table. Source: EasyLot application'
+            columns:
+            - name: pr_id
+              type: UUID
+              nullable: false
+            - name: pr_merchant_id
+              type: UUID
+              nullable: false
+            - name: pr_brand
+              type: TEXT
+              nullable: false
+            - name: pr_main_type
+              type: TEXT
+              nullable: false
+            - name: pr_sub_type
+              type: TEXT
+              nullable: false
+            - name: pr_name
+              type: TEXT
+              nullable: false
+            - name: pr_status
+              type: TEXT
+              nullable: false
+            - name: pr_data
+              type: JSON
+              nullable: false
+            - name: pr_created
+              type: TIMESTAMP(6) WITHOUT TIME ZONE
+              nullable: false
+            - name: pr_creator
+              type: TEXT
+              nullable: false
+            - name: pr_modified
+              type: TIMESTAMP(6) WITHOUT TIME ZONE
+              nullable: false
+            - name: pr_modifier
+              type: TEXT
+              nullable: false
+            - name: pr_unique_code
+              type: TEXT
+              nullable: false
+  employees_db:
+    schemas:
+      public:
+        tables:
+          departments:
+            description: Organizational departments within the bank
+            columns:
+            - name: department_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique department identifier
+            - name: department_name
+              type: VARCHAR(100)
+              nullable: false
+              description: Official department name
+            - name: department_head_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Employee ID of department head
+              foreign_key:
+                table: employees_db.public.employees
+                column: employee_id
+            - name: budget
+              type: NUMERIC(15, 2)
+              nullable: true
+              description: Annual department budget
+          employee_assignments:
+            description: Employee assignments to customers, projects, or branches
+            columns:
+            - name: assignment_id
+              type: INTEGER
+              nullable: false
+              description: Auto-incrementing assignment identifier
+            - name: employee_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Employee assigned
+              foreign_key:
+                table: employees_db.public.employees
+                column: employee_id
+            - name: assignment_type
+              type: VARCHAR(50)
+              nullable: false
+              description: 'Type: customer_portfolio, project, branch_coverage'
+              sample_values:
+              - customer_portfolio
+              - customer_portfolio
+              - customer_portfolio
+              - customer_portfolio
+            - name: related_entity_id
+              type: VARCHAR(50)
+              nullable: true
+              description: ID of related entity (customer, project, branch)
+            - name: start_date
+              type: DATE
+              nullable: false
+              description: Assignment start date
+            - name: end_date
+              type: DATE
+              nullable: true
+              description: Assignment end date, NULL if ongoing
+          employee_training:
+            description: Employee enrollment and completion in training programs
+            columns:
+            - name: training_record_id
+              type: INTEGER
+              nullable: false
+              description: Auto-incrementing training record identifier
+            - name: employee_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Employee enrolled in training
+              foreign_key:
+                table: employees_db.public.employees
+                column: employee_id
+            - name: program_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Training program enrolled in
+              foreign_key:
+                table: employees_db.public.training_programs
+                column: program_id
+            - name: enrollment_date
+              type: DATE
+              nullable: true
+              description: Date employee enrolled
+            - name: completion_date
+              type: DATE
+              nullable: true
+              description: Date employee completed training
+            - name: status
+              type: VARCHAR(50)
+              nullable: true
+              description: 'Status: enrolled, in_progress, completed, dropped'
+              sample_values:
+              - completed
+              - in_progress
+              - completed
+              - completed
+            - name: score
+              type: INTEGER
+              nullable: true
+              description: Final score or grade if applicable
+          employees:
+            description: Bank employee records and employment details
+            columns:
+            - name: employee_id
+              type: VARCHAR(50)
+              nullable: false
+              description: System-generated unique employee identifier
+            - name: employee_number
+              type: VARCHAR(20)
+              nullable: false
+              description: Human-readable employee number
+            - name: first_name
+              type: VARCHAR(100)
+              nullable: false
+              description: Employee first name
+            - name: last_name
+              type: VARCHAR(100)
+              nullable: false
+              description: Employee last name
+            - name: email
+              type: VARCHAR(150)
+              nullable: true
+              description: Corporate email address
+            - name: phone
+              type: VARCHAR(20)
+              nullable: true
+              description: Work phone number
+            - name: role
+              type: VARCHAR(100)
+              nullable: false
+              description: Job title or position
+              sample_values:
+              - IT Specialist
+              - Insurance Agent
+              - Branch Manager
+              - Customer Service Representative
+            - name: department
+              type: VARCHAR(100)
+              nullable: false
+              description: 'Department name: lending, operations, risk, customer_service'
+              sample_values:
+              - Information Technology
+              - Insurance
+              - Retail Banking
+              - Customer Service
+            - name: branch_code
+              type: VARCHAR(10)
+              nullable: true
+              description: Branch location code where employee works
+            - name: manager_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Employee ID of direct manager
+              foreign_key:
+                table: employees_db.public.employees
+                column: employee_id
+            - name: hire_date
+              type: DATE
+              nullable: false
+              description: Date employee was hired
+            - name: termination_date
+              type: DATE
+              nullable: true
+              description: Date employment ended, NULL if currently employed
+              sample_values:
+              - '2023-10-12'
+              - '2022-04-25'
+            - name: employment_status
+              type: VARCHAR(20)
+              nullable: true
+              description: 'Status: active, on_leave, terminated'
+              sample_values:
+              - active
+              - active
+              - active
+              - active
+            - name: salary
+              type: NUMERIC(12, 2)
+              nullable: true
+              description: Annual salary amount
+            - name: created_at
+              type: TIMESTAMP WITHOUT TIME ZONE
+              nullable: true
+              description: Record creation timestamp
+              sample_values:
+              - '2025-10-26 11:10:31.175110'
+              - '2025-10-26 11:10:31.175110'
+              - '2025-10-26 11:10:31.175110'
+              - '2025-10-26 11:10:31.175110'
+          performance_reviews:
+            description: Employee performance evaluation records
+            columns:
+            - name: review_id
+              type: INTEGER
+              nullable: false
+              description: Auto-incrementing review identifier
+            - name: employee_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Employee being reviewed
+              foreign_key:
+                table: employees_db.public.employees
+                column: employee_id
+            - name: review_date
+              type: DATE
+              nullable: false
+              description: Date of the performance review
+            - name: reviewer_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Employee ID of the reviewer, typically manager
+              foreign_key:
+                table: employees_db.public.employees
+                column: employee_id
+            - name: rating
+              type: INTEGER
+              nullable: true
+              description: 'Overall performance rating: 1-5 scale'
+              sample_values:
+              - '3'
+              - '4'
+              - '5'
+              - '4'
+            - name: goals_met
+              type: INTEGER
+              nullable: true
+              description: Number or percentage of goals achieved
+            - name: comments
+              type: TEXT
+              nullable: true
+              description: Detailed review comments
+          training_programs:
+            description: Available training and certification programs
+            columns:
+            - name: program_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique training program identifier
+            - name: program_name
+              type: VARCHAR(200)
+              nullable: false
+              description: Name of the training program
+            - name: description
+              type: TEXT
+              nullable: true
+              description: Detailed description of program content
+            - name: duration_hours
+              type: INTEGER
+              nullable: true
+              description: Total program duration in hours
+              sample_values:
+              - '40'
+              - '4'
+              - '24'
+              - '40'
+            - name: certification
+              type: BOOLEAN
+              nullable: true
+              description: Whether program awards certification upon completion
+              sample_values:
+              - 'False'
+              - 'False'
+              - 'False'
+              - 'False'
+  insurance_db:
+    schemas:
+      public:
+        tables:
+          beneficiaries:
+            description: Policy beneficiaries who receive benefits
+            columns:
+            - name: beneficiary_id
+              type: INTEGER
+              nullable: false
+              description: Auto-incrementing beneficiary identifier
+            - name: policy_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Policy to which beneficiary is linked
+              foreign_key:
+                table: insurance_db.public.policies
+                column: policy_id
+            - name: beneficiary_name
+              type: VARCHAR(200)
+              nullable: false
+              description: Full name of the beneficiary
+            - name: relationship
+              type: VARCHAR(50)
+              nullable: true
+              description: 'Relationship to policyholder: spouse, child, parent'
+            - name: percentage
+              type: INTEGER
+              nullable: true
+              description: Percentage of benefit allocated to this beneficiary
+            - name: contact_info
+              type: TEXT
+              nullable: true
+              description: Contact information for the beneficiary
+          claims:
+            description: Insurance claims filed by policyholders
+            columns:
+            - name: claim_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique claim identifier
+            - name: policy_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Policy under which claim is filed
+              foreign_key:
+                table: insurance_db.public.policies
+                column: policy_id
+            - name: claim_number
+              type: VARCHAR(30)
+              nullable: false
+              description: Customer-facing claim reference number
+            - name: claim_type
+              type: VARCHAR(100)
+              nullable: false
+              description: 'Type: death, accident, property_damage, medical'
+            - name: claim_amount
+              type: NUMERIC(15, 2)
+              nullable: false
+              description: Total amount claimed
+            - name: claim_date
+              type: DATE
+              nullable: false
+              description: Date when claim was filed
+            - name: status
+              type: VARCHAR(50)
+              nullable: true
+              description: 'Status: submitted, under_review, approved, rejected, paid'
+            - name: approved_amount
+              type: NUMERIC(15, 2)
+              nullable: true
+              description: Amount approved for payment, may differ from claim_amount
+            - name: settlement_date
+              type: DATE
+              nullable: true
+              description: Date when claim was paid
+            - name: description
+              type: TEXT
+              nullable: true
+              description: Detailed description of the claim
+            - name: processed_by
+              type: VARCHAR(50)
+              nullable: true
+              description: Employee who processed the claim
+          policies:
+            description: Insurance policies sold to customers
+            columns:
+            - name: policy_id
+              type: VARCHAR(50)
+              nullable: false
+              description: System-generated unique policy identifier
+            - name: policy_number
+              type: VARCHAR(30)
+              nullable: false
+              description: Customer-facing policy number
+            - name: customer_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Customer who owns the policy
+            - name: policy_type
+              type: VARCHAR(50)
+              nullable: false
+              description: 'Type: life, property, vehicle, health, travel'
+            - name: policy_status
+              type: VARCHAR(20)
+              nullable: true
+              description: 'Status: active, lapsed, cancelled, matured'
+            - name: coverage_amount
+              type: NUMERIC(15, 2)
+              nullable: false
+              description: Maximum benefit payable under policy
+            - name: premium_amount
+              type: NUMERIC(10, 2)
+              nullable: false
+              description: Regular premium payment amount
+            - name: premium_frequency
+              type: VARCHAR(20)
+              nullable: true
+              description: 'Payment frequency: monthly, quarterly, annual'
+            - name: start_date
+              type: DATE
+              nullable: false
+              description: Policy coverage start date
+            - name: end_date
+              type: DATE
+              nullable: true
+              description: Policy expiration or maturity date
+            - name: linked_account_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Bank account used for premium payments
+            - name: agent_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Employee who sold the policy
+            - name: created_at
+              type: TIMESTAMP WITHOUT TIME ZONE
+              nullable: true
+              description: Record creation timestamp
+          policy_events:
+            description: Lifecycle events for insurance policies
+            columns:
+            - name: event_id
+              type: INTEGER
+              nullable: false
+              description: Auto-incrementing event identifier
+            - name: policy_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Policy associated with the event
+              foreign_key:
+                table: insurance_db.public.policies
+                column: policy_id
+            - name: event_type
+              type: VARCHAR(50)
+              nullable: false
+              description: 'Type: renewal, modification, cancellation, reinstatement'
+            - name: event_date
+              type: DATE
+              nullable: false
+              description: Date the event occurred
+            - name: description
+              type: TEXT
+              nullable: true
+              description: Details about the event
+            - name: performed_by
+              type: VARCHAR(50)
+              nullable: true
+              description: Employee who performed the action
+          premium_payments:
+            description: Premium payment transactions for policies
+            columns:
+            - name: payment_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique payment identifier
+            - name: policy_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Policy for which premium was paid
+              foreign_key:
+                table: insurance_db.public.policies
+                column: policy_id
+            - name: payment_date
+              type: DATE
+              nullable: false
+              description: Date premium was received
+            - name: amount
+              type: NUMERIC(10, 2)
+              nullable: false
+              description: Premium amount paid
+            - name: payment_method
+              type: VARCHAR(50)
+              nullable: true
+              description: 'Method: auto_debit, check, wire_transfer, online'
+            - name: from_account_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Bank account from which payment was made
+            - name: payment_status
+              type: VARCHAR(20)
+              nullable: true
+              description: 'Status: completed, pending, failed, reversed'
+  loans_db:
+    schemas:
+      public:
+        tables:
+          collateral:
+            description: Assets pledged as security for loans
+            columns:
+            - name: collateral_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique collateral identifier
+            - name: loan_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Loan secured by this collateral
+              foreign_key:
+                table: loans_db.public.loans
+                column: loan_id
+            - name: collateral_type
+              type: VARCHAR(100)
+              nullable: false
+              description: 'Type: property, vehicle, equipment, securities'
+              sample_values:
+              - property
+              - property
+              - vehicle
+              - vehicle
+            - name: description
+              type: TEXT
+              nullable: true
+              description: Detailed description of the collateral
+            - name: appraised_value
+              type: NUMERIC(15, 2)
+              nullable: false
+              description: Professional appraisal value
+            - name: appraisal_date
+              type: DATE
+              nullable: true
+              description: Date of last appraisal
+            - name: ltv_ratio
+              type: NUMERIC(5, 4)
+              nullable: true
+              description: Loan-to-Value ratio as decimal
+          loan_applications:
+            description: Loan applications submitted by customers
+            columns:
+            - name: application_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Unique loan application identifier
+            - name: customer_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Customer applying for the loan
+              cross_db_reference:
+                table: accounts_db.public.customers
+                column: customer_id
+                description: Links loan application to customer master record in accounts
+                  database
+            - name: loan_type
+              type: VARCHAR(50)
+              nullable: false
+              description: 'Type: mortgage, personal, auto, business, education'
+              sample_values:
+              - auto
+              - mortgage
+              - personal
+              - auto
+            - name: requested_amount
+              type: NUMERIC(15, 2)
+              nullable: false
+              description: Amount customer requested to borrow
+            - name: application_date
+              type: DATE
+              nullable: false
+              description: Date application was submitted
+            - name: status
+              type: VARCHAR(50)
+              nullable: true
+              description: 'Status: pending, approved, rejected, withdrawn'
+              sample_values:
+              - approved
+              - rejected
+              - approved
+              - approved
+            - name: officer_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Loan officer handling the application
+              cross_db_reference:
+                table: employees_db.public.employees
+                column: employee_id
+                description: Links to loan officer employee record
+            - name: decision_date
+              type: DATE
+              nullable: true
+              description: Date final decision was made
+            - name: approved_amount
+              type: NUMERIC(15, 2)
+              nullable: true
+              description: Amount approved, may differ from requested
+            - name: rejection_reason
+              type: TEXT
+              nullable: true
+              description: Reason for rejection if applicable
+              sample_values:
+              - Insufficient collateral value
+              - Unstable employment history
+              - Insufficient collateral value
+              - Insufficient collateral value
+          loan_guarantors:
+            description: Third-party guarantors for loans
+            columns:
+            - name: guarantor_id
+              type: INTEGER
+              nullable: false
+              description: Auto-incrementing guarantor identifier
+            - name: loan_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Loan being guaranteed
+              foreign_key:
+                table: loans_db.public.loans
+                column: loan_id
+            - name: guarantor_name
+              type: VARCHAR(200)
+              nullable: false
+              description: Full name of guarantor
+            - name: relationship
+              type: VARCHAR(50)
+              nullable: true
+              description: Relationship to borrower
+              sample_values:
+              - family_member
+              - business_partner
+              - business_partner
+              - spouse
+            - name: contact_info
+              type: TEXT
+              nullable: true
+              description: Guarantor contact information
+            - name: guarantee_amount
+              type: NUMERIC(15, 2)
+              nullable: true
+              description: Amount guaranteed by this guarantor
+          loans:
+            description: Active and historical loan accounts
+            columns:
+            - name: loan_id
+              type: VARCHAR(50)
+              nullable: false
+              description: System-generated unique loan identifier
+            - name: application_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Original application that led to this loan
+              foreign_key:
+                table: loans_db.public.loan_applications
+                column: application_id
+            - name: loan_number
+              type: VARCHAR(30)
+              nullable: false
+              description: Customer-facing loan account number
+            - name: customer_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Customer who received the loan
+              cross_db_reference:
+                table: accounts_db.public.customers
+                column: customer_id
+                description: Links loan to customer master record in accounts database
+            - name: linked_account_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Bank account for disbursement and repayment
+              cross_db_reference:
+                table: accounts_db.public.accounts
+                column: account_id
+                description: Links to bank account used for loan disbursement and
+                  repayments
+            - name: loan_type
+              type: VARCHAR(50)
+              nullable: false
+              description: Type of loan product
+              sample_values:
+              - personal
+              - personal
+              - education
+              - mortgage
+            - name: principal_amount
+              type: NUMERIC(15, 2)
+              nullable: false
+              description: Original loan amount disbursed
+            - name: interest_rate
+              type: NUMERIC(5, 4)
+              nullable: false
+              description: Annual interest rate as decimal (e.g., 0.0525 for 5.25%)
+            - name: term_months
+              type: INTEGER
+              nullable: false
+              description: Loan term length in months
+            - name: disbursement_date
+              type: DATE
+              nullable: false
+              description: Date loan funds were disbursed
+            - name: maturity_date
+              type: DATE
+              nullable: false
+              description: Final payment due date
+            - name: loan_status
+              type: VARCHAR(50)
+              nullable: true
+              description: 'Status: active, paid_off, defaulted, restructured'
+              sample_values:
+              - active
+              - active
+              - active
+              - active
+            - name: outstanding_balance
+              type: NUMERIC(15, 2)
+              nullable: true
+              description: Current remaining balance to be paid
+            - name: default_status
+              type: BOOLEAN
+              nullable: true
+              description: Whether loan is currently in default
+              sample_values:
+              - 'False'
+              - 'False'
+              - 'False'
+              - 'False'
+            - name: approved_by
+              type: VARCHAR(50)
+              nullable: true
+              description: Employee who approved the loan
+              cross_db_reference:
+                table: employees_db.public.employees
+                column: employee_id
+                description: Links to approving officer employee record
+          repayment_schedule:
+            description: Scheduled loan repayment installments
+            columns:
+            - name: schedule_id
+              type: INTEGER
+              nullable: false
+              description: Auto-incrementing schedule entry identifier
+            - name: loan_id
+              type: VARCHAR(50)
+              nullable: false
+              description: Loan this schedule belongs to
+              foreign_key:
+                table: loans_db.public.loans
+                column: loan_id
+            - name: installment_number
+              type: INTEGER
+              nullable: false
+              description: Sequential installment number
+            - name: due_date
+              type: DATE
+              nullable: false
+              description: Payment due date
+            - name: principal_amount
+              type: NUMERIC(15, 2)
+              nullable: false
+              description: Principal portion of payment
+            - name: interest_amount
+              type: NUMERIC(15, 2)
+              nullable: false
+              description: Interest portion of payment
+            - name: total_amount
+              type: NUMERIC(15, 2)
+              nullable: false
+              description: Total payment amount due
+            - name: payment_date
+              type: DATE
+              nullable: true
+              description: Actual date payment was received
+            - name: payment_status
+              type: VARCHAR(20)
+              nullable: true
+              description: 'Status: pending, paid, late, missed'
+              sample_values:
+              - paid
+              - paid
+              - late
+              - paid
+          risk_assessments:
+            description: Credit risk assessments for loans and applications
+            columns:
+            - name: assessment_id
+              type: INTEGER
+              nullable: false
+              description: Auto-incrementing assessment identifier
+            - name: loan_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Loan being assessed, NULL for applications
+            - name: application_id
+              type: VARCHAR(50)
+              nullable: true
+              description: Application being assessed, NULL for existing loans
+            - name: assessment_date
+              type: DATE
+              nullable: false
+              description: Date assessment was performed
+            - name: risk_score
+              type: INTEGER
+              nullable: true
+              description: 'Credit risk score: 0-1000 scale'
+            - name: pd_probability
+              type: NUMERIC(5, 4)
+              nullable: true
+              description: Probability of Default as decimal
+            - name: credit_grade
+              type: VARCHAR(10)
+              nullable: true
+              description: 'Letter grade: AAA, AA, A, BBB, BB, B, CCC, etc.'
+              sample_values:
+              - AA
+              - BB
+              - AAA
+              - A
+            - name: assessed_by
+              type: VARCHAR(50)
+              nullable: true
+              description: Employee or system that performed assessment
+              cross_db_reference:
+                table: employees_db.public.employees
+                column: employee_id
+                description: Links to risk assessment officer employee record
+

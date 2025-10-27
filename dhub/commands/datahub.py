@@ -1216,6 +1216,11 @@ def list_tables_command(
         "--yaml",
         help="Output in YAML format (suppresses all other output)"
     ),
+    minified: bool = typer.Option(
+        False,
+        "--minified",
+        help="Use minified YAML format optimized for AI text-to-SQL (removes URNs, row counts, detailed stats). Must be used with --yaml"
+    ),
 ):
     """List all tables from DataHub metadata catalog.
 
@@ -1234,7 +1239,19 @@ def list_tables_command(
 
         # Export to YAML format
         dhub datahub list-tables --database employees_db --with-columns --yaml
+
+        # Export minified YAML for AI text-to-SQL (optimized, smaller output)
+        dhub datahub list-tables --with-columns --yaml --minified > schema_for_ai.yaml
     """
+    # Validate minified flag usage
+    if minified and not yaml_format:
+        console.print("[red]Error: --minified flag requires --yaml flag[/red]")
+        raise typer.Exit(1)
+
+    # When minified is used, columns are always included
+    if minified:
+        with_columns = True
+
     if not yaml_format:
         console.print("[bold blue]DataHub Tables Listing[/bold blue]\n")
 
@@ -1343,7 +1360,7 @@ def list_tables_command(
 
         # Output in YAML format
         if yaml_format:
-            print_yaml_output(tables_data, with_columns)
+            print_yaml_output(tables_data, with_columns, minified=minified)
             return
 
         # Display results in table format (non-YAML mode)

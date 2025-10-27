@@ -178,6 +178,108 @@ def display_column_statistics(console: Console, columns: List[Dict]):
             console.print(f"    Samples: {', '.join(str(s) for s in samples)}")
 
 
+def build_minified_yaml_output(tables_data: List[Dict]) -> Dict:
+    """Build minified YAML output structure optimized for AI text-to-SQL generation.
+
+    This version removes unnecessary metadata like URNs, row counts, detailed stats,
+    and focuses only on schema structure needed for SQL query generation.
+
+    Args:
+        tables_data: List of table information dictionaries
+
+    Returns:
+        Dictionary ready for YAML serialization (minified for AI)
+    """
+    output_data = {"databases": {}}
+
+    for table_info in tables_data:
+        db_name = table_info["database"]
+        schema_name = table_info["schema"]
+        table_name = table_info["table"]
+
+        # Initialize database structure if not exists
+        if db_name not in output_data["databases"]:
+            output_data["databases"][db_name] = {"schemas": {}}
+
+        # Initialize schema structure if not exists
+        if schema_name not in output_data["databases"][db_name]["schemas"]:
+            output_data["databases"][db_name]["schemas"][schema_name] = {"tables": {}}
+
+        # Build minified table data (only essential fields for SQL generation)
+        table_data = {}
+
+        # Only include description if it exists and is meaningful
+        if table_info.get("description"):
+            table_data["description"] = table_info["description"]
+
+        # Include columns if available
+        if table_info.get("columns"):
+            table_data["columns"] = []
+            for col in table_info["columns"]:
+                col_data = {
+                    "name": col["name"],
+                    "type": col["type"],
+                    "nullable": col["nullable"],
+                }
+
+                # Include description (critical for AI understanding)
+                if col.get("description"):
+                    col_data["description"] = col["description"]
+
+                # Include foreign key relationships (essential for joins)
+                if col.get("foreign_key"):
+                    fk = col["foreign_key"]
+                    col_data["foreign_key"] = {
+                        "table": fk.get("foreign_table"),
+                        "column": fk.get("foreign_column"),
+                    }
+
+                # Transform structured properties into cross_db_reference
+                # These specialized properties describe cross-database references that behave like FKs
+                if col.get("structured_properties"):
+                    struct_props = col["structured_properties"]
+
+                    # Check if this has the cross-database FK structured properties
+                    has_cross_db_fk = (
+                        "fk_target_table" in struct_props or
+                        "fk_target_column" in struct_props or
+                        "fk_relationship_description" in struct_props
+                    )
+
+                    if has_cross_db_fk:
+                        # Transform to cross_db_reference format
+                        cross_db_ref = {}
+                        if "fk_target_table" in struct_props:
+                            cross_db_ref["table"] = struct_props["fk_target_table"]
+                        if "fk_target_column" in struct_props:
+                            cross_db_ref["column"] = struct_props["fk_target_column"]
+                        if "fk_relationship_description" in struct_props:
+                            cross_db_ref["description"] = struct_props["fk_relationship_description"]
+
+                        if cross_db_ref:
+                            col_data["cross_db_reference"] = cross_db_ref
+                    else:
+                        # Keep other structured properties as-is
+                        col_data["structured_properties"] = struct_props
+
+                # Include sample values ONLY for low-cardinality columns (enums/categories)
+                # This helps AI understand possible values without bloating the output
+                if col.get("stats"):
+                    stats = col["stats"]
+                    unique_count = stats.get("unique_count")
+                    sample_values = stats.get("sample_values", [])
+
+                    # Include samples for categorical/enum columns (low cardinality)
+                    if unique_count is not None and unique_count <= 10 and sample_values:
+                        col_data["sample_values"] = sample_values[:10]  # Max 10 samples
+
+                table_data["columns"].append(col_data)
+
+        output_data["databases"][db_name]["schemas"][schema_name]["tables"][table_name] = table_data
+
+    return output_data
+
+
 def build_yaml_output(tables_data: List[Dict], with_columns: bool) -> Dict:
     """Build YAML output structure from table data.
 
@@ -249,14 +351,18 @@ def build_yaml_output(tables_data: List[Dict], with_columns: bool) -> Dict:
     return output_data
 
 
-def print_yaml_output(tables_data: List[Dict], with_columns: bool):
+def print_yaml_output(tables_data: List[Dict], with_columns: bool, minified: bool = False):
     """Print tables data in YAML format.
 
     Args:
         tables_data: List of table information dictionaries
         with_columns: Whether to include column details
+        minified: Whether to use minified format (optimized for AI text-to-SQL)
     """
-    output_data = build_yaml_output(tables_data, with_columns)
+    if minified:
+        output_data = build_minified_yaml_output(tables_data)
+    else:
+        output_data = build_yaml_output(tables_data, with_columns)
     print(yaml.dump(output_data, default_flow_style=False, sort_keys=False, allow_unicode=True))
 
 
